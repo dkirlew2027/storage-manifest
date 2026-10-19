@@ -1,0 +1,1845 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#E4E8EC" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0F1317" media="(prefers-color-scheme: dark)">
+<meta name="description" content="Photograph, categorize, and find everything you put in storage.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Storage">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<title>Storage Manifest</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders:opsz,wght@10..72,600..800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil:opsz,wght@10..72,700..800&display=swap">
+<style>
+/* Layout: one phone-width column on cool concrete grey, sticky header, fixed bottom tab bar.
+   Sheets cover the screen on phones and float as centered panels on wide screens.
+   Boldness lives in two places: the dark camera viewfinder and the kraft box cards with stencil labels.
+   Palette borrows from warehouse pallet racking: orange beams for actions, blue uprights for selection. */
+:root{
+  --bg:#E4E8EC;
+  --surface:#FFFFFF;
+  --surface-2:#EDF0F3;
+  --ink:#13171C;
+  --ink-2:#4F5966;
+  --rule:#C6CDD4;
+  --beam:#EC661D;
+  --on-beam:#1B1007;
+  --upright:#1D4E9E;
+  --on-upright:#FFFFFF;
+  --upright-tint:#D9E3F4;
+  --kraft:#C9A575;
+  --kraft-ink:#20170C;
+  --kraft-edge:#A88350;
+  --tape:rgba(255,255,255,.42);
+  --stamp:#8E1020;
+  --fragile:#C21F30;
+  --on-fragile:#FFFFFF;
+  --ok:#1E7A49;
+  --warn-bg:#FCEFD4;
+  --warn-ink:#553600;
+  --vf-bg:#1A1F26;
+  --vf-ink:#EEF2F6;
+  --vf-ink-2:#A9B4C1;
+  --vf-btn:rgba(255,255,255,.16);
+  --knob:#FFFFFF;
+  --scrim:rgba(19,23,28,.5);
+  --shadow:0 1px 2px rgba(19,23,28,.08),0 6px 16px rgba(19,23,28,.07);
+  --f-display:"Big Shoulders","Arial Narrow","Roboto Condensed",system-ui,sans-serif;
+  --f-stencil:"Big Shoulders Stencil","Big Shoulders","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --r:10px;
+  --tabbar-h:64px;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F1317; --surface:#181E25; --surface-2:#131920; --ink:#E6EAEE; --ink-2:#9AA5B1; --rule:#2C353F;
+    --beam:#FF7731; --on-beam:#1B1007; --upright:#82A8EC; --on-upright:#0F1317; --upright-tint:#1B2840;
+    --kraft:#B48E5C; --kraft-ink:#1B1309; --kraft-edge:#8C6C42; --tape:rgba(255,255,255,.2);
+    --stamp:#6E0A17; --fragile:#FF5B67; --on-fragile:#1B0306; --ok:#52C58E; --warn-bg:#3A2A0E; --warn-ink:#F7D79A;
+    --vf-bg:#090C0F; --vf-ink:#EEF2F6; --vf-ink-2:#9AA5B1; --vf-btn:rgba(255,255,255,.16); --knob:#FFFFFF; --scrim:rgba(0,0,0,.62);
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 18px rgba(0,0,0,.32);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F1317; --surface:#181E25; --surface-2:#131920; --ink:#E6EAEE; --ink-2:#9AA5B1; --rule:#2C353F;
+  --beam:#FF7731; --on-beam:#1B1007; --upright:#82A8EC; --on-upright:#0F1317; --upright-tint:#1B2840;
+  --kraft:#B48E5C; --kraft-ink:#1B1309; --kraft-edge:#8C6C42; --tape:rgba(255,255,255,.2);
+  --stamp:#6E0A17; --fragile:#FF5B67; --on-fragile:#1B0306; --ok:#52C58E; --warn-bg:#3A2A0E; --warn-ink:#F7D79A;
+  --vf-bg:#090C0F; --vf-ink:#EEF2F6; --vf-ink-2:#9AA5B1; --vf-btn:rgba(255,255,255,.16); --knob:#FFFFFF; --scrim:rgba(0,0,0,.62);
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 18px rgba(0,0,0,.32);
+  color-scheme:dark;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 var(--f-body);-webkit-font-smoothing:antialiased;padding-top:env(safe-area-inset-top,0px)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+img{max-width:100%}
+[hidden]{display:none!important}
+html.locked,html.locked body{overflow:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--upright);outline-offset:2px}
+.vh{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0;padding:0;margin:-1px}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+
+/* header */
+.topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--bg);border-bottom:1px solid var(--rule)}
+.topbar-in{max-width:680px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:10px;display:flex;align-items:center;gap:12px}
+.brand{display:flex;align-items:center;gap:10px;min-width:0;flex:1}
+.brand svg{width:28px;height:28px;flex:none;color:var(--beam)}
+.brand-name{font:800 24px/1 var(--f-display);letter-spacing:.03em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.counts{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:2px;font:500 12px/1.2 var(--f-mono);color:var(--ink-2);font-variant-numeric:tabular-nums;text-align:right}
+.counts span{white-space:nowrap}
+@media (max-width:420px){.brand-name{font-size:21px}.brand svg{width:24px;height:24px}.brand{gap:8px}}
+
+/* page */
+main{max-width:680px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px calc(var(--tabbar-h) + 32px + env(safe-area-inset-bottom,0px))}
+.view{display:flex;flex-direction:column;gap:18px}
+.section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0}
+.section-head h2,.h3{margin:0;font:800 21px/1.1 var(--f-display);text-transform:uppercase;letter-spacing:.04em;text-wrap:balance}
+.h3{font-size:18px}
+.eyebrow,.field > label,.label{font:500 11.5px/1.2 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
+.meta{margin:0;font-size:13px;color:var(--ink-2)}
+.hint{margin:0;font-size:14px;color:var(--ink-2);max-width:60ch}
+
+/* buttons */
+.btn{appearance:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:0 16px;border-radius:10px;border:1px solid var(--rule);background:var(--surface);color:var(--ink);font:700 15px/1.15 var(--f-body);cursor:pointer;text-align:center;text-decoration:none}
+.btn svg{width:20px;height:20px;flex:none}
+.btn:hover{border-color:var(--ink-2)}
+.btn-primary{background:var(--beam);border-color:var(--beam);color:var(--on-beam)}
+.btn-primary:hover{border-color:var(--beam);filter:brightness(1.06)}
+.btn-sm{min-height:36px;padding:0 12px;font-size:14px;border-radius:8px}
+.btn-sm svg{width:17px;height:17px}
+.btn-danger{color:var(--fragile)}
+.btn.armed{background:var(--fragile);border-color:var(--fragile);color:var(--on-fragile)}
+.btn[disabled]{opacity:.5;cursor:not-allowed;filter:none}
+.btn.more{width:100%}
+.link{appearance:none;border:0;background:none;color:var(--upright);font:700 14px/1.2 var(--f-body);cursor:pointer;padding:8px 0;text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px}
+.link.inline{padding:0;font-size:inherit}
+.icon-btn{appearance:none;width:44px;height:44px;flex:none;border-radius:10px;border:1px solid var(--rule);background:var(--surface);color:var(--ink);display:grid;place-items:center;cursor:pointer}
+.icon-btn svg{width:20px;height:20px}
+.btn-row{display:flex;flex-wrap:wrap;gap:10px}
+
+/* scan + live camera */
+.capture{display:flex;flex-direction:column;gap:12px}
+.viewfinder{position:relative;width:100%;max-width:100%;aspect-ratio:4/3;max-height:52vh;min-height:250px;border-radius:14px;overflow:hidden;color:var(--vf-ink);background-color:var(--vf-bg);background-image:radial-gradient(circle at 50% 42%,rgba(255,255,255,.07),transparent 62%),repeating-linear-gradient(0deg,rgba(255,255,255,.025) 0 1px,transparent 1px 5px)}
+.viewfinder[data-state="live"]{aspect-ratio:1/1;max-height:64vh}
+.viewfinder video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;background:#000}
+.viewfinder[data-state="live"] video{display:block}
+.vf-start{appearance:none;border:0;background:none;color:inherit;position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:28px 24px;cursor:pointer;text-align:center;font:inherit}
+.viewfinder[data-state="live"] .vf-start{display:none}
+.vf-corner{position:absolute;width:34px;height:34px;border:3px solid var(--beam);pointer-events:none;z-index:2}
+.vf-corner.tl{top:14px;left:14px;border-right:0;border-bottom:0;border-top-left-radius:6px}
+.vf-corner.tr{top:14px;right:14px;border-left:0;border-bottom:0;border-top-right-radius:6px}
+.vf-corner.bl{bottom:14px;left:14px;border-right:0;border-top:0;border-bottom-left-radius:6px}
+.vf-corner.br{bottom:14px;right:14px;border-left:0;border-top:0;border-bottom-right-radius:6px}
+.vf-icon{width:68px;height:68px;border-radius:50%;background:var(--beam);color:var(--on-beam);display:grid;place-items:center;transition:transform .15s ease}
+.vf-icon svg{width:32px;height:32px}
+.vf-title{font:800 36px/1 var(--f-display);text-transform:uppercase;letter-spacing:.02em}
+.vf-sub{font-size:15px;color:var(--vf-ink-2);max-width:32ch;text-wrap:balance}
+.vf-sub:empty{display:none}
+.vf-start:hover .vf-icon{transform:scale(1.05)}
+.vf-start:active .vf-icon{transform:scale(.96)}
+.viewfinder[data-state="starting"] .vf-icon{opacity:.6}
+.vf-controls{position:absolute;left:0;right:0;bottom:16px;z-index:3;display:none;align-items:center;justify-content:center;gap:22px}
+.viewfinder[data-state="live"] .vf-controls{display:flex}
+.vf-btn{appearance:none;width:46px;height:46px;border-radius:50%;border:0;background:var(--vf-btn);color:var(--vf-ink);display:grid;place-items:center;cursor:pointer;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.vf-btn svg{width:22px;height:22px}
+.vf-btn[aria-pressed="true"]{background:var(--beam);color:var(--on-beam)}
+.shutter{appearance:none;width:76px;height:76px;border-radius:50%;border:5px solid var(--vf-ink);background:var(--beam);cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,.35);transition:transform .1s ease}
+.shutter:active{transform:scale(.92)}
+.vf-flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:4}
+.vf-flash.go{animation:flash .35s ease-out}
+@keyframes flash{from{opacity:.85}to{opacity:0}}
+.capture-alt{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.switch-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 14px;background:var(--surface);border:1px solid var(--rule);border-radius:var(--r);cursor:pointer}
+.switch-text{display:flex;flex-direction:column;gap:2px;min-width:0}
+.switch-title{font-weight:700}
+.switch-sub{font-size:13px;color:var(--ink-2)}
+.switch{appearance:none;-webkit-appearance:none;margin:0;width:48px;height:28px;border-radius:999px;background:var(--rule);position:relative;flex:none;cursor:pointer;transition:background .15s}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--knob);box-shadow:0 1px 2px rgba(0,0,0,.3);transition:transform .15s}
+.switch:checked{background:var(--upright)}
+.switch:checked::after{transform:translateX(20px)}
+.ai-note{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 12px;margin:0;font-size:13px;color:var(--ink-2)}
+.ai-note p{margin:0;flex:1 1 220px;min-width:0}
+.ai-note.warn{padding:12px 14px;border-radius:var(--r);background:var(--warn-bg);color:var(--warn-ink);font-size:14px}
+.notice{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 14px;padding:12px 14px;border:1px dashed var(--ink-2);border-radius:var(--r);font-size:14px;color:var(--ink-2)}
+.notice p{margin:0;flex:1 1 220px;min-width:0}
+.notice b{color:var(--ink)}
+.empty{padding:20px 18px;border:1px dashed var(--rule);border-radius:var(--r);color:var(--ink-2);font-size:15px;background:var(--surface)}
+.empty strong{display:block;margin-bottom:6px;color:var(--ink);font:800 20px/1.1 var(--f-display);letter-spacing:.03em;text-transform:uppercase}
+
+/* rows */
+.rows{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--rule);border-radius:var(--r);overflow:hidden}
+.row{appearance:none;border:0;background:none;color:inherit;text-align:left;display:grid;grid-template-columns:56px minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 12px;cursor:pointer;width:100%;font:inherit}
+.rows > .row + .row{border-top:1px solid var(--rule)}
+.row:hover{background:var(--surface-2)}
+.row.noloc{grid-template-columns:56px minmax(0,1fr)}
+.thumb{position:relative;display:block;width:56px;height:56px;border-radius:8px;overflow:hidden;background:var(--surface-2)}
+.thumb img,.photo-lg img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1}
+.ph{position:absolute;inset:0;display:grid;place-items:center;background:repeating-linear-gradient(135deg,var(--surface-2) 0 6px,var(--bg) 6px 12px)}
+.ph span{font:800 16px/1 var(--f-stencil);letter-spacing:.06em;color:var(--ink-2)}
+.row-main{display:flex;flex-direction:column;gap:5px;min-width:0}
+.row-name{font-weight:700;font-size:16px;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.row-meta{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;font-size:13px;color:var(--ink-2);min-width:0}
+.code{font:500 11.5px/1 var(--f-mono);letter-spacing:.06em;padding:3px 5px;border:1px solid var(--rule);border-radius:4px;color:var(--ink);background:var(--surface)}
+.row-loc{display:flex;flex-direction:column;align-items:flex-end;gap:4px;max-width:9.5rem;min-width:0;text-align:right}
+.loc-label{font:800 19px/1 var(--f-stencil);letter-spacing:.04em;color:var(--ink);overflow-wrap:anywhere}
+.loc-label.none{font:500 12px/1.2 var(--f-mono);letter-spacing:.02em;color:var(--ink-2)}
+.loc-place{font-size:12px;line-height:1.25;color:var(--ink-2);overflow-wrap:anywhere}
+.pct{font:500 12px/1 var(--f-mono);color:var(--upright)}
+.flag-fragile{font:500 11px/1 var(--f-mono);text-transform:uppercase;letter-spacing:.07em;color:var(--fragile)}
+
+/* log */
+.searchbar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
+.search{display:flex;align-items:center;gap:8px;min-height:48px;padding:0 12px;background:var(--surface);border:1px solid var(--rule);border-radius:10px;min-width:0}
+.search:focus-within{border-color:var(--upright);box-shadow:0 0 0 3px var(--upright-tint)}
+.search svg{width:20px;height:20px;color:var(--ink-2);flex:none}
+.search input{flex:1;min-width:0;border:0;background:none;color:var(--ink);font:16px var(--f-body);outline:none;height:46px}
+.btn-match{min-height:48px}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 6px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chips:empty{display:none}
+.chip{appearance:none;flex:none;display:inline-flex;align-items:center;gap:7px;min-height:38px;padding:0 12px;border-radius:999px;border:1px solid var(--rule);background:var(--surface);color:var(--ink);font:700 14px/1 var(--f-body);cursor:pointer;white-space:nowrap}
+.chip b{font:500 12px/1 var(--f-mono);color:var(--ink-2)}
+.chip.on{background:var(--upright);border-color:var(--upright);color:var(--on-upright)}
+.chip.on b,.chip.on .code{color:inherit;border-color:currentColor;background:transparent}
+.chip .code{padding:2px 4px}
+.chip-sm{min-height:32px;padding:0 10px;font-size:13px}
+.list-head{font-size:14px;color:var(--ink-2);margin:0}
+.list-head:empty{display:none}
+.list-head q{color:var(--ink);font-weight:700}
+.log-foot{display:flex;flex-direction:column;gap:10px}
+.log-foot:empty{display:none}
+.match{background:var(--surface);border:1px solid var(--rule);border-radius:12px;overflow:hidden}
+.match-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;border-bottom:1px solid var(--rule)}
+.match-seen{display:flex;align-items:center;gap:12px;padding:12px}
+.match-seen img{width:64px;height:64px;object-fit:cover;border-radius:8px;flex:none;background:var(--vf-bg)}
+.match-seen > div{min-width:0}
+.seen{font-weight:700;font-size:16px}
+.mrow{border-top:1px solid var(--rule);display:flex;flex-direction:column}
+.best-tag{align-self:flex-start;margin:10px 12px 0;font:500 11px/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;background:var(--beam);color:var(--on-beam);padding:4px 6px;border-radius:4px}
+.why{margin:-4px 12px 12px 80px;font-size:13px;color:var(--ink-2)}
+.match-none{margin:0;padding:0 12px 14px;color:var(--ink-2);font-size:14px}
+.status-title{font-weight:700;font-size:16px}
+.status-sub{font-size:13px;color:var(--ink-2)}
+
+/* boxes */
+.place{display:flex;flex-direction:column;gap:10px}
+.place-head{margin:0;display:flex;align-items:center;gap:10px;font:500 12px/1.2 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
+.place-head::after{content:"";flex:1;height:1px;background:var(--rule)}
+.boxgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.boxcard,.boxhero{position:relative;border-radius:6px;background-color:var(--kraft);background-image:repeating-linear-gradient(90deg,rgba(0,0,0,.04) 0 2px,transparent 2px 7px);color:var(--kraft-ink);box-shadow:inset 0 -3px 0 var(--kraft-edge),var(--shadow);overflow:hidden}
+.boxcard{appearance:none;border:0;text-align:left;padding:24px 14px 14px;min-height:138px;display:flex;flex-direction:column;gap:6px;cursor:pointer;font:inherit}
+.boxcard:hover{filter:brightness(1.04)}
+.tape{position:absolute;top:0;left:50%;width:46%;height:16px;transform:translateX(-50%);background:var(--tape)}
+.boxcard-label{font:800 34px/.95 var(--f-stencil);letter-spacing:.03em;overflow-wrap:anywhere}
+.boxcard-count{font:500 13px/1.2 var(--f-mono)}
+.boxcard-cats{font:500 12px/1.35 var(--f-mono);opacity:.85}
+.stamp{align-self:flex-start;margin-top:auto;transform:rotate(-6deg);font:800 15px/1 var(--f-display);letter-spacing:.14em;text-transform:uppercase;color:var(--stamp);border:2px solid var(--stamp);border-radius:4px;padding:4px 7px 3px}
+.boxcard.loose{background:var(--surface);background-image:none;color:var(--ink);border:2px dashed var(--rule);box-shadow:none}
+.boxcard.loose .boxcard-label{font-family:var(--f-display);font-size:30px}
+.boxhero{padding:28px 18px 18px;display:flex;flex-direction:column;gap:6px}
+.boxhero-label{font:800 54px/.9 var(--f-stencil);letter-spacing:.03em;overflow-wrap:anywhere}
+.boxhero-place{font-weight:700;font-size:16px}
+
+/* sheets */
+#sheet{position:fixed;inset:0;z-index:40}
+.scrim{position:absolute;inset:0;background:var(--scrim)}
+.sheet-panel{position:absolute;inset:0;background:var(--bg);display:flex;flex-direction:column;outline:none}
+.sheet-head{flex:none;display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:calc(10px + env(safe-area-inset-top,0px));padding-bottom:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));border-bottom:1px solid var(--rule);background:var(--bg)}
+.sheet-head h2{margin:0;font:800 24px/1 var(--f-display);text-transform:uppercase;letter-spacing:.03em;min-width:0}
+.sheet-body{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 28px;display:flex;flex-direction:column;gap:16px}
+.sheet-foot{flex:none;display:flex;gap:10px;padding-top:12px;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));border-top:1px solid var(--rule);background:var(--surface)}
+.sheet-foot .btn{flex:1}
+.sheet-foot .btn-primary{flex:1.6}
+@media (min-width:720px){
+  .sheet-panel{inset:auto;top:4vh;bottom:4vh;left:50%;transform:translateX(-50%);width:min(620px,92vw);border-radius:16px;overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.35)}
+  .sheet-head{padding-top:12px}
+  .sheet-foot{padding-bottom:12px}
+}
+.shot{position:relative;flex:none;width:100%;max-width:100%;aspect-ratio:4/3;max-height:42vh;border-radius:12px;overflow:hidden;background:var(--vf-bg)}
+.shot img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.shot .vf-corner{width:26px;height:26px}
+.scanline{position:absolute;left:7%;right:7%;top:10%;height:2px;background:var(--beam);box-shadow:0 0 14px 3px var(--beam);opacity:0;z-index:2}
+.shot.scanning .scanline{opacity:.9;animation:scan 1.8s ease-in-out infinite alternate}
+@keyframes scan{from{top:10%}to{top:90%}}
+.status{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-radius:var(--r);background:var(--surface);border:1px solid var(--rule)}
+.status-text{display:flex;flex-direction:column;gap:3px;min-width:0}
+.status.ok .status-title::before{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--ok);margin-right:8px;vertical-align:1px}
+.status.warn{background:var(--warn-bg);color:var(--warn-ink);border-color:transparent}
+.status.warn .status-sub{color:inherit}
+.cards{display:flex;flex-direction:column;gap:12px}
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.card.off{opacity:.5}
+.keep-row{display:flex;align-items:center;gap:10px;font-weight:700;cursor:pointer}
+.keep-row input{width:22px;height:22px;margin:0;accent-color:var(--upright)}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.field-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 12px}
+.sug-why{font-size:13px;color:var(--ink-2)}
+.in{width:100%;min-height:46px;padding:10px 12px;border:1px solid var(--rule);border-radius:8px;background:var(--surface);color:var(--ink);font:16px/1.3 var(--f-body)}
+.in:focus{outline:none;border-color:var(--upright);box-shadow:0 0 0 3px var(--upright-tint)}
+.in[disabled]{background:var(--surface-2);color:var(--ink-2)}
+textarea.in{min-height:84px;resize:vertical}
+select.in{appearance:none;-webkit-appearance:none;padding-right:36px;background-image:linear-gradient(45deg,transparent 50%,var(--ink-2) 50%),linear-gradient(135deg,var(--ink-2) 50%,transparent 50%);background-position:calc(100% - 19px) 50%,calc(100% - 14px) 50%;background-size:5px 5px;background-repeat:no-repeat}
+.in.name{font-weight:700;font-size:18px}
+.in-stencil{font:800 24px/1 var(--f-stencil);letter-spacing:.04em}
+.in.mono{font-family:var(--f-mono);font-size:15px}
+.name-row{display:flex;gap:8px;align-items:stretch}
+.name-row .in{flex:1;min-width:0}
+.name-row .btn{min-height:46px}
+.grid-cq{display:grid;grid-template-columns:minmax(0,1fr) 96px;gap:10px}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+@media (max-width:440px){.grid2{grid-template-columns:minmax(0,1fr)}}
+.check{display:inline-flex;align-items:center;gap:10px;min-height:44px;padding:0 16px 0 14px;border:1px solid var(--rule);border-radius:999px;cursor:pointer;font-weight:700;align-self:flex-start;background:var(--surface)}
+.check input{width:20px;height:20px;margin:0;accent-color:var(--fragile)}
+.check:has(input:checked){border-color:var(--fragile);color:var(--fragile)}
+.check.plain input{accent-color:var(--upright)}
+.check.plain:has(input:checked){border-color:var(--upright);color:var(--ink)}
+.idline{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:13px;color:var(--ink-2);margin-top:-4px}
+.conf{font:500 12px/1 var(--f-mono);padding:5px 7px;border-radius:4px;background:var(--surface-2);color:var(--ink)}
+.conf.low{background:var(--warn-bg);color:var(--warn-ink)}
+.alts{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.tip{margin:0;font-size:14px;color:var(--ink-2)}
+.tip .eyebrow{display:block;margin-bottom:3px}
+.dupes{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--ink-2)}
+.dupes:empty{display:none}
+.dupe b{color:var(--ink)}
+.skel-card{gap:14px}
+.skel{display:block;height:14px;border-radius:6px;background:var(--surface-2);position:relative;overflow:hidden}
+.skel::after{content:"";position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,var(--rule),transparent);animation:sh 1.3s infinite}
+@keyframes sh{to{transform:translateX(100%)}}
+.w60{width:60%}.w90{width:90%}.w40{width:40%}
+.boxsec{display:flex;flex-direction:column;gap:10px}
+.boxsec:empty{display:none}
+.boxpick{display:flex;gap:8px;overflow-x:auto;padding:3px 3px 8px}
+.boxchip{appearance:none;flex:none;display:flex;flex-direction:column;align-items:flex-start;gap:5px;min-width:108px;max-width:190px;min-height:86px;padding:10px 12px;border-radius:8px;border:2px solid transparent;background-color:var(--kraft);background-image:repeating-linear-gradient(90deg,rgba(0,0,0,.04) 0 2px,transparent 2px 7px);color:var(--kraft-ink);text-align:left;cursor:pointer;box-shadow:inset 0 -2px 0 var(--kraft-edge)}
+.bc-label{font:800 23px/1 var(--f-stencil);letter-spacing:.03em;overflow-wrap:anywhere}
+.bc-place{font-size:12px;line-height:1.25;overflow-wrap:anywhere}
+.bc-tag{font:500 10.5px/1 var(--f-mono);text-transform:uppercase;letter-spacing:.08em;background:var(--kraft-ink);color:var(--kraft);padding:3px 5px;border-radius:3px}
+.boxchip.on{border-color:var(--upright);box-shadow:0 0 0 3px var(--upright-tint),inset 0 -2px 0 var(--kraft-edge)}
+.boxchip.new,.boxchip.none{background:var(--surface);background-image:none;color:var(--ink);border:2px dashed var(--rule);justify-content:center;align-items:center;font-weight:700;box-shadow:none}
+.boxchip.new.on,.boxchip.none.on{border-style:solid;border-color:var(--upright);box-shadow:0 0 0 3px var(--upright-tint)}
+.newbox{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:10px}
+@media (max-width:440px){.newbox{grid-template-columns:minmax(0,1fr)}}
+.photo-lg{position:relative;flex:none;width:100%;max-width:100%;aspect-ratio:4/3;max-height:46vh;border-radius:12px;overflow:hidden;background:var(--vf-bg)}
+.photo-lg img{object-fit:contain}
+.where{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;padding:16px 16px 18px;border-radius:8px;background-color:var(--kraft);background-image:repeating-linear-gradient(90deg,rgba(0,0,0,.04) 0 2px,transparent 2px 7px);color:var(--kraft-ink);box-shadow:inset 0 -3px 0 var(--kraft-edge)}
+.where .eyebrow{flex-basis:100%;color:inherit;opacity:.8}
+.where-box{font:800 40px/1 var(--f-stencil);letter-spacing:.03em;overflow-wrap:anywhere}
+.where-place{font-weight:700}
+.where.unboxed{background:var(--surface);background-image:none;color:var(--ink);border:2px dashed var(--rule);box-shadow:none}
+.where.unboxed .where-box{font:800 26px/1 var(--f-display);text-transform:uppercase}
+.tipbox{padding:12px 14px;border-radius:var(--r);background:var(--surface);border:1px solid var(--rule)}
+.tipbox p{margin:4px 0 0;font-size:15px}
+.copy-fallback{font:14px/1.45 var(--f-mono);min-height:140px}
+.setsec{display:flex;flex-direction:column;gap:12px;padding:14px;background:var(--surface);border:1px solid var(--rule);border-radius:12px}
+.setsec h3{margin:0}
+.setsec details summary{cursor:pointer;font-weight:700}
+.setsec details[open] summary{margin-bottom:10px}
+.state-line{display:flex;align-items:center;gap:8px;font-size:14px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--rule);flex:none}
+.dot.on{background:var(--ok)}
+.dot.warn{background:var(--beam)}
+.version{text-align:center}
+
+/* tab bar */
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--surface);border-top:1px solid var(--rule);padding-bottom:env(safe-area-inset-bottom,0px)}
+.tabbar-in{max-width:680px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;grid-template-columns:repeat(3,1fr)}
+.tab{appearance:none;border:0;background:none;color:var(--ink-2);height:var(--tabbar-h);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;font:500 11.5px/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;position:relative;cursor:pointer}
+.tab svg{width:24px;height:24px}
+.tab[aria-current="page"]{color:var(--ink)}
+.tab[aria-current="page"]::before{content:"";position:absolute;top:0;left:24%;right:24%;height:3px;background:var(--beam);border-radius:0 0 3px 3px}
+
+.toast{position:fixed;left:50%;bottom:calc(var(--tabbar-h) + 16px + env(safe-area-inset-bottom,0px));transform:translate(-50%,16px);opacity:0;pointer-events:none;z-index:60;background:var(--ink);color:var(--bg);padding:12px 16px;border-radius:10px;font-weight:700;font-size:15px;width:max-content;max-width:min(92vw,480px);box-shadow:var(--shadow);transition:opacity .2s ease,transform .2s ease}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{transition-duration:0s!important}
+  .shot.scanning .scanline{animation:none;top:50%}
+  .skel::after{animation:none}
+  .vf-flash.go{animation:none}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-in">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5z"/><path d="M3 7.5 12 12l9-4.5M12 12v9"/><path d="m7.5 5.2 9 4.6"/></svg>
+      <span class="brand-name">Storage Manifest</span>
+    </div>
+    <div class="counts" id="counts"><span>Loading…</span></div>
+    <button type="button" class="icon-btn" data-act="settings" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg></button>
+  </div>
+</header>
+
+<main>
+  <section id="view-scan" class="view" aria-label="Scan">
+    <div class="capture" id="capture">
+      <div class="viewfinder" id="vf" data-state="idle">
+        <video id="vf-video" playsinline muted autoplay></video>
+        <span class="vf-corner tl"></span><span class="vf-corner tr"></span><span class="vf-corner bl"></span><span class="vf-corner br"></span>
+        <button type="button" class="vf-start" id="vf-start" data-act="cam-start">
+          <span class="vf-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/></svg></span>
+          <span class="vf-title" id="vf-title">Start camera</span>
+          <span class="vf-sub" id="vf-sub">Point at one item, or a box's contents laid out together</span>
+        </button>
+        <div class="vf-controls">
+          <button type="button" class="vf-btn" data-act="cam-stop" aria-label="Turn camera off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+          <button type="button" class="shutter" data-act="cam-snap" aria-label="Take photo"></button>
+          <button type="button" class="vf-btn" id="cam-flip" data-act="cam-flip" aria-label="Switch camera" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 4v4h4"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 20v-4h-4"/></svg></button>
+          <button type="button" class="vf-btn" id="cam-torch" data-act="cam-torch" aria-label="Flashlight" aria-pressed="false" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></button>
+        </div>
+        <span class="vf-flash" id="vf-flash" aria-hidden="true"></span>
+      </div>
+      <div class="capture-alt">
+        <button type="button" class="btn" data-act="pick-library"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></svg>Choose photo</button>
+        <button type="button" class="btn" data-act="manual"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="m13.5 6.5 4 4"/></svg>Type it in</button>
+      </div>
+      <label class="switch-row" for="careful" id="careful-row">
+        <span class="switch-text"><span class="switch-title">Careful mode</span><span class="switch-sub">Slower and costs a little more, but reads labels and brands more closely</span></span>
+        <input type="checkbox" id="careful" class="switch" role="switch">
+      </label>
+      <div class="ai-note" id="ai-note"></div>
+    </div>
+    <div class="empty" id="capture-off" hidden></div>
+
+    <div class="notice" id="backup-notice" hidden>
+      <p id="backup-text"><b>Back up your log.</b> Browsers can clear saved site data.</p>
+      <button type="button" class="btn btn-sm" data-act="settings">Back up</button>
+    </div>
+
+    <div class="section-head"><h2>Recently logged</h2><button type="button" class="link" data-act="tab" data-tab="log">See full log</button></div>
+    <div id="recent"><div class="empty">Loading your log…</div></div>
+  </section>
+
+  <section id="view-log" class="view" aria-label="Log" hidden>
+    <div class="searchbar">
+      <label class="search" for="q">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg>
+        <input id="q" type="search" placeholder="Search items, tags, or boxes" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
+      </label>
+      <button type="button" class="btn btn-match" id="match-btn" data-act="match-photo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/></svg>Match photo</button>
+    </div>
+    <div class="chips" id="cat-chips" role="toolbar" aria-label="Filter by category"></div>
+    <div id="match-panel"></div>
+    <p class="list-head" id="list-head" aria-live="polite"></p>
+    <div id="log-list"></div>
+    <div class="log-foot" id="log-foot"></div>
+  </section>
+
+  <section id="view-boxes" class="view" aria-label="Boxes" hidden>
+    <div class="section-head"><h2 id="boxes-sum">Boxes</h2><button type="button" class="btn btn-sm" id="new-box-btn" data-act="new-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>New box</button></div>
+    <div id="box-groups" class="view"></div>
+  </section>
+</main>
+
+<nav class="tabbar" aria-label="Sections">
+  <div class="tabbar-in">
+    <button type="button" class="tab" data-act="tab" data-tab="scan" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><path d="M7.5 12h9"/></svg>Scan</button>
+    <button type="button" class="tab" data-act="tab" data-tab="log" aria-current="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4.5 6h.01M4.5 12h.01M4.5 18h.01" stroke-width="3"/></svg>Log</button>
+    <button type="button" class="tab" data-act="tab" data-tab="boxes" aria-current="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5z"/><path d="M3 7.5 12 12l9-4.5M12 12v9"/></svg>Boxes</button>
+  </div>
+</nav>
+
+<div id="sheet" hidden></div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<datalist id="places"></datalist>
+<input type="file" id="cam" class="vh" accept="image/*" capture="environment" tabindex="-1" aria-hidden="true">
+<input type="file" id="lib" class="vh" accept="image/*" tabindex="-1" aria-hidden="true">
+<input type="file" id="matchfile" class="vh" accept="image/*" tabindex="-1" aria-hidden="true">
+<input type="file" id="itemphoto" class="vh" accept="image/*" tabindex="-1" aria-hidden="true">
+<input type="file" id="restorefile" class="vh" accept="application/json,.json" tabindex="-1" aria-hidden="true">
+
+<script>
+(() => {
+"use strict";
+
+const VERSION = "1.0.0";
+const API_URL = "https://api.anthropic.com/v1/messages";
+const DEFAULT_MODELS = { fast: "claude-haiku-5-5", careful: "claude-sonnet-5-5" };
+
+/* ---------- vocabulary ---------- */
+const CATS = [
+  ["KIT", "Kitchen"], ["TLS", "Tools & Hardware"], ["ELC", "Electronics & Cables"], ["BKS", "Books & Papers"],
+  ["CLO", "Clothing & Shoes"], ["LIN", "Linens & Bedding"], ["HOL", "Holiday & Seasonal"], ["SPT", "Sports & Outdoor"],
+  ["GDN", "Garden & Patio"], ["TOY", "Toys & Games"], ["DEC", "Decor & Art"], ["OFF", "Office & Craft"],
+  ["KEP", "Keepsakes"], ["HSE", "Household & Cleaning"], ["FUR", "Furniture & Large Items"], ["OTH", "Other"]
+];
+const CAT = Object.fromEntries(CATS);
+const CAT_LIST = CATS.map(([c, n]) => c + " = " + n).join("\n");
+
+const IDENTIFY_PROMPT = `You are cataloging household items that are going into storage. Look at the photo.
+
+List each distinct item worth logging. Usually that is one item. If the photo shows several separate items (for example a box's contents laid out on a table), list each one, up to 10. Ignore hands, walls, floors, tables and other background.
+
+Category codes:
+${CAT_LIST}
+
+Reply with only JSON in this shape:
+{"items":[{"name":"12-inch cast iron skillet","cat":"KIT","sub":"Cookware","desc":"Black cast iron pan with a short helper handle and a raised logo on the base","tags":["skillet","frying pan","cast iron","cookware"],"qty":1,"fragile":false,"confidence":0.92,"alternatives":[],"tip":"Rub with a little oil and wrap in paper so it does not rust"}]}
+
+Field rules:
+- name: specific, 3 to 7 words. Include brand, size, color or count when visible.
+- cat: exactly one code from the list. Use OTH only if nothing else fits.
+- sub: 1 to 3 words.
+- desc: one sentence of visual details that would help recognize this exact item later.
+- tags: 3 to 8 lowercase search words, including common synonyms.
+- qty: how many of this item are visible. A matched set counts as 1.
+- fragile: true if it could break, crack or bend in a packed box.
+- confidence: 0 to 1, how sure you are about what the item is.
+- alternatives: up to 2 other things it could be when confidence is below 0.8, otherwise [].
+- tip: one short packing or storage tip for this specific item.
+If no item is visible, reply {"items":[]}.`;
+
+const categorizePrompt = name => `Categorize this household item for a storage log: ${JSON.stringify(name)}
+
+Category codes:
+${CAT_LIST}
+
+Reply with only JSON in this shape:
+{"cat":"HOL","sub":"Tree accessories","tags":["tree stand","christmas","holiday"],"fragile":false,"tip":"Tape the screws to the base so they stay together"}
+
+- cat: exactly one code from the list.
+- sub: 1 to 3 words.
+- tags: 3 to 8 lowercase search words, including common synonyms.
+- fragile: true if it could break, crack or bend in a packed box.
+- tip: one short packing or storage tip for this item.`;
+
+const DESCRIBE_PROMPT = `Name the main item in this photo so it can be searched for. Reply with only JSON in this shape:
+{"name":"short specific name","tags":["3 to 8 lowercase search words, including synonyms"]}`;
+
+const matchPrompt = lines => `Someone is looking for an item in their storage log. The photo shows the item they want to find, or something that looks like it.
+
+Their log, one item per line (ref | name | category | details | tags):
+${lines}
+
+Pick the logged items that best match the photo. Reply with only JSON in this shape:
+{"seen":"what the photo shows, 3 to 8 words","matches":[{"ref":"i4","score":0.9,"why":"short reason, under 12 words"}]}
+
+Rules:
+- Up to 5 matches, best first. Use refs exactly as written.
+- score is 0 to 1: how likely the logged item is the one in the photo. Use 0.9 or higher only for a clear match.
+- Include items scored below 0.3 only when nothing scores higher.
+- If nothing in the log resembles the photo, return "matches":[].`;
+
+const SVG = body => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
+const ICON = {
+  x: SVG('<path d="M6 6l12 12M18 6 6 18"/>'),
+  camera: SVG('<path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/>'),
+  copy: SVG('<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>'),
+  download: SVG('<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>'),
+  back: SVG('<path d="M15 5l-7 7 7 7"/>')
+};
+
+/* ---------- small helpers ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const esc = v => String(v == null ? "" : v).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const plural = (n, one, many) => n + " " + (n === 1 ? one : (many || one + "s"));
+const str = (v, max) => typeof v === "string" ? v.trim().slice(0, max) : (typeof v === "number" && isFinite(v) ? String(v) : "");
+const clampNum = (v, lo, hi, d) => { const n = Number(v); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : d; };
+const clampInt = (v, lo, hi, d) => { const n = parseInt(v, 10); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : d; };
+const clip = (s, n) => { s = String(s || "").replace(/\s+/g, " ").replace(/\|/g, "/").trim(); return s.length > n ? s.slice(0, n - 1) + "…" : s; };
+const byLabel = (a, b) => (a.label || "").localeCompare(b.label || "", undefined, { numeric: true, sensitivity: "base" });
+const newest = (a, b) => (b.createdAt || 0) - (a.createdAt || 0);
+const fmtDate = ts => ts ? new Date(ts).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : "";
+const isoDay = ts => { const d = new Date(ts); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
+const uid = () => (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 12);
+const ls = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* storage unavailable */ } },
+  del(k) { try { localStorage.removeItem(k); } catch (e) { /* storage unavailable */ } }
+};
+const splitTags = s => Array.from(new Set(String(s || "").split(/[,;\n]/).map(t => t.trim().toLowerCase().slice(0, 40)).filter(Boolean))).slice(0, 12);
+const blobToDataUrl = b => new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = () => rej(fr.error); fr.readAsDataURL(b); });
+
+/* ---------- settings ---------- */
+const getKey = () => ls.get("sm.apiKey", "");
+const aiOn = () => !!getKey();
+const models = () => ({ fast: ls.get("sm.modelFast", "") || DEFAULT_MODELS.fast, careful: ls.get("sm.modelCareful", "") || DEFAULT_MODELS.careful });
+
+/* ---------- state ---------- */
+const S = { items: [], boxes: [], loaded: false, dbState: "pending", tab: "scan", query: "", cat: "", limit: 150, match: null, sheet: null };
+let boxMap = new Map(), byBox = new Map();
+let R = null;            // review in progress
+let sheetUrls = [];      // object URLs to release when a sheet closes
+let pendingFile = null;  // a file waiting for a fresh tap to share
+const canWrite = () => S.dbState === "ready";
+const getItem = id => S.items.find(i => i.id === id);
+
+/* ---------- local database (IndexedDB) ---------- */
+const store = (() => {
+  let dbp = null;
+  function open() {
+    if (dbp) return dbp;
+    dbp = new Promise((res, rej) => {
+      if (!("indexedDB" in window)) { rej(new Error("IndexedDB unavailable")); return; }
+      const r = indexedDB.open("storage-manifest", 1);
+      r.onupgradeneeded = () => { const d = r.result; for (const n of ["items", "boxes", "photos"]) if (!d.objectStoreNames.contains(n)) d.createObjectStore(n); };
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+      r.onblocked = () => rej(new Error("blocked"));
+    });
+    dbp.catch(() => { dbp = null; });
+    return dbp;
+  }
+  async function run(name, mode, fn) {
+    const d = await open();
+    return new Promise((res, rej) => {
+      const t = d.transaction(name, mode), s = t.objectStore(name);
+      let out;
+      const req = fn(s);
+      if (req) req.onsuccess = () => { out = req.result; };
+      t.oncomplete = () => res(out);
+      t.onerror = () => rej(t.error);
+      t.onabort = () => rej(t.error || new Error("aborted"));
+    });
+  }
+  return {
+    open,
+    all: name => run(name, "readonly", s => s.getAll()),
+    get: (name, key) => run(name, "readonly", s => s.get(key)),
+    put: (name, key, val) => run(name, "readwrite", s => s.put(val, key)),
+    del: (name, key) => run(name, "readwrite", s => s.delete(key)),
+    clear: name => run(name, "readwrite", s => s.clear()),
+    putMany: (name, entries) => run(name, "readwrite", s => { for (const [k, v] of entries) s.put(v, k); return null; })
+  };
+})();
+function storeErrCopy(e) {
+  return e && e.name === "QuotaExceededError" ? "Your phone is out of space for this app. Delete some photos or items." : "Couldn't save. Reload the app and try again.";
+}
+let persistAsked = false;
+async function askPersist() {
+  if (persistAsked) return;
+  persistAsked = true;
+  try { if (navigator.storage && navigator.storage.persist && !(await navigator.storage.persisted())) await navigator.storage.persist(); } catch (e) { /* best effort */ }
+}
+
+/* ---------- data normalization ---------- */
+function normItem(d) {
+  d = d || {};
+  const qty = parseInt(d.qty, 10);
+  return {
+    id: typeof d.id === "string" ? d.id.slice(0, 80) : "", name: str(d.name, 120), cat: CAT[d.cat] ? d.cat : "OTH", sub: str(d.sub, 60), desc: str(d.desc, 400),
+    tags: Array.isArray(d.tags) ? d.tags.map(t => str(t, 40)).filter(Boolean) : [],
+    qty: qty > 0 ? Math.min(qty, 9999) : 1, fragile: !!d.fragile,
+    box: typeof d.box === "string" && d.box ? d.box : null,
+    notes: str(d.notes, 600), tip: str(d.tip, 240),
+    conf: d.conf == null ? null : clampNum(d.conf, 0, 1, null),
+    photo: typeof d.photo === "string" && /^[A-Za-z0-9_-]{8,80}$/.test(d.photo) ? d.photo : null,
+    thumb: typeof d.thumb === "string" && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(d.thumb) ? d.thumb : null,
+    createdAt: Number(d.createdAt) || 0, updatedAt: Number(d.updatedAt) || 0
+  };
+}
+function normBox(d) {
+  d = d || {};
+  return { id: typeof d.id === "string" ? d.id.slice(0, 80) : "", label: str(d.label, 24) || "Box", place: str(d.place, 60), createdAt: Number(d.createdAt) || 0 };
+}
+const plainItem = it => { const o = Object.assign({}, it); delete o._f; return o; };
+function reindex() {
+  boxMap = new Map(S.boxes.map(b => [b.id, b]));
+  byBox = new Map();
+  for (const it of S.items) {
+    const k = it.box && boxMap.has(it.box) ? it.box : "";
+    if (!byBox.has(k)) byBox.set(k, []);
+    byBox.get(k).push(it);
+  }
+  for (const it of S.items) it._f = fieldsOf(it);
+  const places = Array.from(new Set(S.boxes.map(b => b.place).filter(Boolean))).sort((a, b) => a.localeCompare(b));
+  $("#places").innerHTML = places.map(p => `<option value="${esc(p)}"></option>`).join("");
+}
+async function loadAll() {
+  try {
+    const [items, boxes] = await Promise.all([store.all("items"), store.all("boxes")]);
+    S.items = (items || []).map(normItem).filter(i => i.id);
+    S.boxes = (boxes || []).map(normBox).filter(b => b.id);
+    S.dbState = "ready";
+  } catch (e) { S.dbState = "none"; }
+  S.loaded = true;
+  reindex(); renderAll();
+}
+async function saveItems(list) {
+  await store.putMany("items", list.map(it => [it.id, plainItem(it)]));
+  for (const it of list) { const i = S.items.findIndex(x => x.id === it.id); if (i >= 0) S.items[i] = it; else S.items.push(it); }
+  askPersist();
+}
+async function saveBox(b) {
+  await store.put("boxes", b.id, Object.assign({}, b));
+  const i = S.boxes.findIndex(x => x.id === b.id); if (i >= 0) S.boxes[i] = b; else S.boxes.push(b);
+  askPersist();
+}
+async function removePhotoIfUnused(photoId, exceptId) {
+  if (photoId && !S.items.some(x => x.id !== exceptId && x.photo === photoId)) { try { await store.del("photos", photoId); } catch (e) { /* leave it */ } }
+}
+
+/* ---------- Claude API (your own key, called from this phone) ---------- */
+async function askClaude({ text, image, careful, maxTokens, signal }) {
+  const key = getKey();
+  if (!key) throw { code: "no_key" };
+  const content = [];
+  if (image) content.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: image } });
+  content.push({ type: "text", text });
+  const m = models();
+  let res;
+  try {
+    res = await fetch(API_URL, {
+      method: "POST", signal,
+      headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+      body: JSON.stringify({ model: careful ? m.careful : m.fast, max_tokens: maxTokens || 4000, messages: [{ role: "user", content }] })
+    });
+  } catch (e) {
+    if (e && e.name === "AbortError") throw { code: "cancelled" };
+    throw { code: "network" };
+  }
+  let body = null;
+  try { body = await res.json(); } catch (e) { /* non-JSON error body */ }
+  if (!res.ok) {
+    const msg = (body && body.error && body.error.message) || "";
+    const type = (body && body.error && body.error.type) || "";
+    const code = res.status === 401 ? "bad_key"
+      : res.status === 403 ? "forbidden"
+      : res.status === 404 ? "no_model"
+      : res.status === 429 ? "rate_limited"
+      : res.status === 529 || type === "overloaded_error" ? "overloaded"
+      : res.status >= 500 ? "server"
+      : /credit|billing|balance/i.test(msg) ? "billing" : "bad_request";
+    throw { code, message: msg };
+  }
+  const out = (body && Array.isArray(body.content) ? body.content : []).filter(b => b && b.type === "text").map(b => b.text).join("").trim();
+  if (!out) throw { code: body && body.stop_reason === "refusal" ? "refused" : "empty" };
+  return out;
+}
+function parseJSON(text) {
+  try { return JSON.parse(text); } catch (e) { /* try a code fence or the outermost braces */ }
+  const fence = /```(?:json)?\s*([\s\S]*?)```/i.exec(text);
+  if (fence) { try { return JSON.parse(fence[1]); } catch (e) { /* keep looking */ } }
+  const a = text.indexOf("{"), b = text.lastIndexOf("}");
+  if (a >= 0 && b > a) { try { return JSON.parse(text.slice(a, b + 1)); } catch (e) { /* give up */ } }
+  throw { code: "invalid_json" };
+}
+const askJSON = async opts => parseJSON(await askClaude(opts));
+async function blobToBase64(blob) { const u = await blobToDataUrl(blob); return String(u).split(",")[1] || ""; }
+function aiCopy(e) {
+  const c = e && e.code;
+  if (c === "no_key") return "Add your Claude API key in Settings so photos are identified automatically. For now, fill in the details below.";
+  if (c === "cancelled") return "Stopped. Fill in the details below.";
+  if (c === "bad_key" || c === "forbidden") return "Your API key was rejected. Check it in Settings, then try again.";
+  if (c === "billing") return "Your API account is out of credit. Add credit in the Claude Console, then try again.";
+  if (c === "no_model") return "The model name in Settings wasn't found. Reset the models to their defaults.";
+  if (c === "rate_limited" || c === "overloaded" || c === "server") return "Claude is busy right now. Try again in a minute, or fill in the details below.";
+  if (c === "network") return "No connection. Check your signal and try again, or fill in the details below.";
+  if (c === "refused") return "Claude couldn't identify this photo. Fill in the details below.";
+  return "Identification didn't finish. Try again, or fill in the details below.";
+}
+const careful = () => $("#careful").checked;
+
+/* ---------- closest-match text search ---------- */
+const STOP = new Set(["the", "a", "an", "of", "and", "or", "in", "on", "for", "with", "my", "to", "is", "where", "did", "i", "put", "it", "its"]);
+const norm = s => String(s || "").toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+const toks = s => { const n = norm(s); return n ? n.split(" ").filter(t => !STOP.has(t)) : []; };
+const triCache = new Map();
+function tri(t) {
+  let s = triCache.get(t);
+  if (!s) {
+    s = new Set(); const p = " " + t + " ";
+    for (let i = 0; i < p.length - 2; i++) s.add(p.slice(i, i + 3));
+    if (triCache.size > 20000) triCache.clear();
+    triCache.set(t, s);
+  }
+  return s;
+}
+function sim(q, t) {
+  if (q === t) return 1;
+  if (q.length >= 2 && t.length > q.length && t.startsWith(q)) return 0.9;
+  if (t.length >= 3 && q.length > t.length && q.startsWith(t)) return 0.85;
+  if (q.length < 3 || t.length < 3) return 0;
+  const a = tri(q), b = tri(t); let n = 0;
+  for (const x of a) if (b.has(x)) n++;
+  const j = n / (a.size + b.size - n);
+  return j >= 0.3 ? Math.min(0.8, j * 1.1) : 0;
+}
+function fieldsOf(it) {
+  const b = it.box && boxMap.get(it.box);
+  return [
+    [toks(it.name), 3],
+    [toks(it.tags.join(" ")), 2.4],
+    [toks(it.cat + " " + CAT[it.cat] + " " + it.sub), 1.6],
+    [toks(b ? b.label + " " + b.place : ""), 1.6],
+    [toks(it.desc + " " + it.notes), 1.1]
+  ];
+}
+function rank(q, list) {
+  const qt = toks(q); if (!qt.length) return [];
+  const qn = norm(q), out = [];
+  for (const it of list) {
+    const f = it._f || (it._f = fieldsOf(it));
+    let tot = 0;
+    for (const w of qt) {
+      let best = 0;
+      for (const [ts, wt] of f) {
+        if (best >= wt) continue;
+        for (const t of ts) { const s = sim(w, t) * wt; if (s > best) best = s; }
+      }
+      tot += best;
+    }
+    let score = tot / (qt.length * 3);
+    if (qn.length >= 3 && norm(it.name).includes(qn)) score = Math.max(score, 0.97);
+    if (score > 0) out.push({ item: it, score: Math.min(1, score) });
+  }
+  return out.sort((a, b) => b.score - a.score || newest(a.item, b.item));
+}
+
+/* ---------- photo helpers ---------- */
+async function decodeImage(file) {
+  if (typeof createImageBitmap === "function") {
+    try { return await createImageBitmap(file, { imageOrientation: "from-image" }); } catch (e) { /* fall back to <img> */ }
+  }
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.src = url;
+  try { await img.decode(); } finally { setTimeout(() => URL.revokeObjectURL(url), 30000); }
+  return img;
+}
+function encodeJpeg(src, max, q) {
+  const w0 = src.naturalWidth || src.videoWidth || src.width, h0 = src.naturalHeight || src.videoHeight || src.height;
+  if (!w0 || !h0) return Promise.reject(new Error("empty image"));
+  const s = Math.min(1, max / Math.max(w0, h0));
+  const w = Math.max(1, Math.round(w0 * s)), h = Math.max(1, Math.round(h0 * s));
+  const cv = document.createElement("canvas");
+  cv.width = w; cv.height = h;
+  const ctx = cv.getContext("2d");
+  ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, w, h);
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(src, 0, 0, w, h);
+  return new Promise((res, rej) => cv.toBlob(b => b ? res(b) : rej(new Error("encode failed")), "image/jpeg", q));
+}
+async function prepPhoto(file) {
+  const src = await decodeImage(file);
+  try {
+    const [ai, store_, thumb] = await Promise.all([encodeJpeg(src, 1280, 0.85), encodeJpeg(src, 1200, 0.8), encodeJpeg(src, 160, 0.72)]);
+    return { ai, store: store_, thumbUrl: await blobToDataUrl(thumb) };
+  } finally { if (src.close) { try { src.close(); } catch (e) { /* already closed */ } } }
+}
+async function putPhoto(blob) {
+  const id = uid();
+  await store.put("photos", id, { type: blob.type || "image/jpeg", buf: await blob.arrayBuffer() });
+  return id;
+}
+async function photoUrl(id) {
+  const p = await store.get("photos", id);
+  if (!p || !p.buf) return null;
+  const url = URL.createObjectURL(new Blob([p.buf], { type: p.type || "image/jpeg" }));
+  sheetUrls.push(url);
+  return url;
+}
+function thumbHTML(it) {
+  return `<span class="thumb">${it.thumb ? `<img src="${esc(it.thumb)}" alt="" loading="lazy" decoding="async" data-ph="1">` : ""}<span class="ph"><span>${esc(it.cat)}</span></span></span>`;
+}
+
+/* ---------- live camera ---------- */
+const cam = { stream: null, state: "idle", facing: "environment", wanted: false, torch: false };
+function renderCam() {
+  const vf = $("#vf"), start = $("#vf-start");
+  vf.dataset.state = cam.state;
+  const fallback = cam.state === "denied" || cam.state === "unsupported" || cam.state === "error";
+  start.dataset.act = fallback ? "pick-camera" : "cam-start";
+  $("#vf-title").textContent = cam.state === "starting" ? "Starting…" : fallback ? "Take a photo" : "Start camera";
+  $("#vf-sub").textContent = cam.state === "denied"
+    ? "Camera access is off for this site, so this opens your camera app. You can allow access in your browser settings."
+    : fallback ? "Opens your camera app" : cam.state === "starting" ? "" : "Point at one item, or a box's contents laid out together";
+  $("#cam-torch").setAttribute("aria-pressed", cam.torch ? "true" : "false");
+}
+async function startCamera() {
+  if (cam.state === "live" || cam.state === "starting") return;
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.isSecureContext) { cam.state = "unsupported"; renderCam(); $("#cam").click(); return; }
+  cam.state = "starting"; cam.wanted = true; renderCam();
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: cam.facing }, width: { ideal: 1920 }, height: { ideal: 1440 } } });
+    if (!cam.wanted || S.tab !== "scan" || document.hidden) { stream.getTracks().forEach(t => t.stop()); cam.state = "idle"; renderCam(); return; }
+    cam.stream = stream; cam.torch = false;
+    const v = $("#vf-video");
+    v.srcObject = stream; v.muted = true;
+    await v.play().catch(() => {});
+    cam.state = "live"; renderCam();
+    const track = stream.getVideoTracks()[0];
+    const caps = track && track.getCapabilities ? track.getCapabilities() : {};
+    $("#cam-torch").hidden = !(caps && caps.torch);
+    navigator.mediaDevices.enumerateDevices().then(ds => { $("#cam-flip").hidden = ds.filter(d => d.kind === "videoinput").length < 2; }).catch(() => {});
+  } catch (e) {
+    stopTracks();
+    cam.wanted = false;
+    cam.state = e && (e.name === "NotAllowedError" || e.name === "SecurityError") ? "denied" : "error";
+    renderCam();
+  }
+}
+function stopTracks() {
+  if (cam.stream) { cam.stream.getTracks().forEach(t => t.stop()); cam.stream = null; }
+  const v = $("#vf-video"); if (v) v.srcObject = null;
+}
+function stopCamera(keepWanted) {
+  stopTracks();
+  if (!keepWanted) cam.wanted = false;
+  if (cam.state === "live" || cam.state === "starting") cam.state = "idle";
+  renderCam();
+}
+async function snap() {
+  const v = $("#vf-video");
+  if (!v || !v.videoWidth) return;
+  const pw = v.clientWidth || v.videoWidth, ph = v.clientHeight || v.videoHeight;
+  const vw = v.videoWidth, vh = v.videoHeight, pa = pw / ph, va = vw / vh;
+  let sx = 0, sy = 0, sw = vw, sh = vh;
+  if (va > pa) { sw = Math.round(vh * pa); sx = Math.round((vw - sw) / 2); }
+  else { sh = Math.round(vw / pa); sy = Math.round((vh - sh) / 2); }
+  const cv = document.createElement("canvas");
+  cv.width = sw; cv.height = sh;
+  cv.getContext("2d").drawImage(v, sx, sy, sw, sh, 0, 0, sw, sh);
+  const f = $("#vf-flash"); f.classList.remove("go"); void f.offsetWidth; f.classList.add("go");
+  const blob = await new Promise(r => cv.toBlob(r, "image/jpeg", 0.92));
+  if (blob) startReview(blob);
+}
+async function toggleTorch() {
+  const track = cam.stream && cam.stream.getVideoTracks()[0];
+  if (!track) return;
+  try { await track.applyConstraints({ advanced: [{ torch: !cam.torch }] }); cam.torch = !cam.torch; } catch (e) { toast("The flashlight isn't available here."); }
+  renderCam();
+}
+function flipCamera() {
+  cam.facing = cam.facing === "environment" ? "user" : "environment";
+  stopTracks(); cam.state = "idle";
+  startCamera();
+}
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) { if (cam.stream) { stopTracks(); cam.state = "idle"; renderCam(); } }
+  else if (cam.wanted && S.tab === "scan" && !S.sheet) startCamera();
+});
+
+/* ---------- rendering ---------- */
+function renderAll() {
+  renderCounts();
+  renderScan();
+  if (S.tab === "log") renderLog();
+  if (S.tab === "boxes") renderBoxes();
+  renderBoxList();
+}
+function renderCounts() {
+  const el = $("#counts");
+  if (S.dbState === "none") el.innerHTML = "<span>Not saving</span>";
+  else if (!S.loaded) el.innerHTML = "<span>Loading…</span>";
+  else el.innerHTML = `<span>${plural(S.items.length, "item")}</span><span>${plural(S.boxes.length, "box", "boxes")}</span>`;
+}
+function rowHTML(it, opt = {}) {
+  const b = it.box && boxMap.get(it.box);
+  const pct = opt.pct != null ? `<span class="pct">${Math.round(opt.pct * 100)}%</span>` : "";
+  const loc = opt.noLoc ? "" : `<span class="row-loc">${pct}${b ? `<span class="loc-label">${esc(b.label)}</span><span class="loc-place">${esc(b.place || "No place set")}</span>` : `<span class="loc-label none">No box</span>`}</span>`;
+  return `<button type="button" class="row${opt.noLoc ? " noloc" : ""}" data-act="open-item" data-id="${esc(it.id)}">${thumbHTML(it)}<span class="row-main"><span class="row-name">${esc(it.name || "Unnamed item")}</span><span class="row-meta"><span class="code">${esc(it.cat)}</span>${it.sub ? `<span>${esc(it.sub)}</span>` : ""}${it.qty > 1 ? `<span class="mono">×${it.qty}</span>` : ""}${it.fragile ? `<span class="flag-fragile">Fragile</span>` : ""}</span></span>${loc}</button>`;
+}
+function catSummary(items) {
+  const cnt = {};
+  for (const i of items) cnt[i.cat] = (cnt[i.cat] || 0) + 1;
+  const top = Object.entries(cnt).sort((a, b) => b[1] - a[1]);
+  const shown = top.slice(0, 3).map(([c, n]) => c + " ×" + n).join(" · ");
+  return top.length > 3 ? shown + " · +" + (top.length - 3) : shown;
+}
+function renderScan() {
+  const off = S.dbState === "none";
+  $("#capture").hidden = off;
+  const co = $("#capture-off");
+  co.hidden = !off;
+  if (off) co.innerHTML = "<strong>Can't save here</strong>This browser is blocking storage for this site, often because of a private window. Open the app in a regular window.";
+  $("#careful-row").hidden = !aiOn();
+  const note = $("#ai-note");
+  if (aiOn()) { note.className = "ai-note"; note.innerHTML = "<p>Photos go to Claude through your API key to be identified. Everything else stays on this phone.</p>"; }
+  else { note.className = "ai-note warn"; note.innerHTML = `<p>Add your Claude API key so photos are identified and categorized automatically. Until then you can name items yourself.</p><button type="button" class="btn btn-sm" data-act="settings">Add API key</button>`; }
+  const last = Number(ls.get("sm.lastBackup", "0"));
+  const needsBackup = S.items.length >= 5 && (!last || Date.now() - last > 14 * 864e5);
+  $("#backup-notice").hidden = !needsBackup;
+  if (needsBackup) $("#backup-text").innerHTML = last ? `<b>Last backup was ${esc(fmtDate(last))}.</b> Save a fresh one so a cleared browser can't take your log with it.` : "<b>Back up your log.</b> Browsers can clear saved site data, so keep a backup file in Files or iCloud.";
+  const rec = $("#recent");
+  if (!S.loaded) rec.innerHTML = `<div class="empty">Loading your log…</div>`;
+  else if (!S.items.length) rec.innerHTML = `<div class="empty"><strong>Nothing logged yet</strong>Start the camera and snap something you're packing. It shows up here with its category and box.</div>`;
+  else rec.innerHTML = `<div class="rows">${S.items.slice().sort(newest).slice(0, 4).map(i => rowHTML(i)).join("")}</div>`;
+}
+function renderLog() {
+  $("#match-btn").hidden = !aiOn();
+  const counts = {};
+  for (const i of S.items) counts[i.cat] = (counts[i.cat] || 0) + 1;
+  if (S.cat && !counts[S.cat]) S.cat = "";
+  $("#cat-chips").innerHTML = S.items.length ? [
+    `<button type="button" class="chip${S.cat ? "" : " on"}" data-act="cat" data-cat="" aria-pressed="${!S.cat}">All <b>${S.items.length}</b></button>`,
+    ...CATS.filter(([c]) => counts[c]).map(([c, n]) => `<button type="button" class="chip${S.cat === c ? " on" : ""}" data-act="cat" data-cat="${c}" aria-pressed="${S.cat === c}"><span class="code">${c}</span>${esc(n)} <b>${counts[c]}</b></button>`)
+  ].join("") : "";
+  renderMatch();
+  const head = $("#list-head"), list = $("#log-list");
+  if (!S.loaded || !S.items.length) {
+    head.textContent = "";
+    list.innerHTML = !S.loaded ? `<div class="empty">Loading your log…</div>` : `<div class="empty"><strong>Your log is empty</strong>Items you scan or type in on the Scan tab are listed here, with the box each one is in.</div>`;
+    renderLogFoot();
+    return;
+  }
+  const pool = S.cat ? S.items.filter(i => i.cat === S.cat) : S.items;
+  const q = S.query.trim();
+  let rows, total;
+  if (q) {
+    const hits = rank(q, pool).filter(h => h.score >= 0.3);
+    total = hits.length;
+    const where = S.cat ? " in " + esc(CAT[S.cat]) : "";
+    head.innerHTML = !hits.length
+      ? `Nothing close to <q>${esc(q)}</q>${where}. Try another word${aiOn() ? ", or match a photo" : ""}.`
+      : hits[0].score >= 0.75
+        ? `${plural(hits.length, "match", "matches")} for <q>${esc(q)}</q>${where}, closest first`
+        : `No exact match for <q>${esc(q)}</q>${where}. Closest items:`;
+    rows = hits.slice(0, S.limit).map(h => rowHTML(h.item, { pct: h.score })).join("");
+  } else {
+    const sorted = pool.slice().sort(newest);
+    total = sorted.length;
+    head.textContent = plural(sorted.length, "item") + (S.cat ? " in " + CAT[S.cat] : "") + ", newest first";
+    rows = sorted.slice(0, S.limit).map(i => rowHTML(i)).join("");
+  }
+  list.innerHTML = rows ? `<div class="rows">${rows}</div>${total > S.limit ? `<button type="button" class="btn more" data-act="more">Show ${Math.min(150, total - S.limit)} more</button>` : ""}` : "";
+  renderLogFoot();
+}
+function renderLogFoot() {
+  $("#log-foot").innerHTML = S.items.length ? `<button type="button" class="btn" data-act="export-csv">${ICON.download}Export log as CSV</button>` : "";
+}
+function renderMatch() {
+  const el = $("#match-panel"), m = S.match;
+  if (!m) { el.innerHTML = ""; return; }
+  const img = m.photoUrl ? `<img src="${esc(m.photoUrl)}" alt="Your photo">` : "";
+  const head = btn => `<div class="match-head"><span class="eyebrow">Photo match</span>${btn}</div>`;
+  if (m.status === "prep" || m.status === "loading") {
+    el.innerHTML = `<section class="match">${head(`<button type="button" class="btn btn-sm" data-act="match-stop">Stop</button>`)}<div class="match-seen">${img}<div><div class="status-title">Comparing with ${plural(S.items.length, "logged item")}… <span class="mono tick" data-start="${m.started}">0s</span></div><div class="status-sub">Claude is looking for the closest match.</div></div></div></section>`;
+    return;
+  }
+  if (m.status === "error") {
+    el.innerHTML = `<section class="match">${head(`<button type="button" class="link" data-act="match-clear">Clear</button>`)}<div class="match-seen">${img}<div class="status-sub">${esc(m.msg)}</div></div></section>`;
+    return;
+  }
+  const rows = m.matches.map((x, k) => {
+    const it = getItem(x.id);
+    if (!it) return "";
+    return `<div class="mrow">${k === 0 ? `<span class="best-tag">Closest match</span>` : ""}${rowHTML(it, { pct: x.score })}${x.why ? `<p class="why">${esc(x.why)}</p>` : ""}</div>`;
+  }).join("");
+  el.innerHTML = `<section class="match">${head(`<button type="button" class="link" data-act="match-clear">Clear</button>`)}<div class="match-seen">${img}<div><div class="eyebrow">Looks like</div><div class="seen">${esc(m.seen || "an item")}</div></div></div>${rows || `<p class="match-none">Nothing in your log looks like this. It may not be logged yet.</p>`}</section>`;
+}
+function boxCardHTML(b) {
+  const inside = byBox.get(b.id) || [];
+  return `<button type="button" class="boxcard" data-act="open-box" data-id="${esc(b.id)}"><span class="tape" aria-hidden="true"></span><span class="boxcard-label">${esc(b.label)}</span><span class="boxcard-count">${plural(inside.length, "item")}</span><span class="boxcard-cats">${inside.length ? esc(catSummary(inside)) : "Empty"}</span>${inside.some(i => i.fragile) ? `<span class="stamp">Fragile</span>` : ""}</button>`;
+}
+function renderBoxes() {
+  const el = $("#box-groups");
+  $("#new-box-btn").hidden = !canWrite();
+  if (!S.loaded) { $("#boxes-sum").textContent = "Boxes"; el.innerHTML = `<div class="empty">Loading boxes…</div>`; return; }
+  const groups = new Map();
+  for (const b of S.boxes) { const k = b.place; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(b); }
+  const keys = Array.from(groups.keys()).sort((a, b) => (a === "") - (b === "") || a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }));
+  const placeCount = keys.filter(Boolean).length;
+  $("#boxes-sum").textContent = S.boxes.length ? plural(S.boxes.length, "box", "boxes") + (placeCount ? " · " + plural(placeCount, "place") : "") : "Boxes";
+  const loose = byBox.get("") || [];
+  let html = keys.map(k => `<section class="place"><h3 class="place-head">${esc(k || "No place set")}</h3><div class="boxgrid">${groups.get(k).sort(byLabel).map(boxCardHTML).join("")}</div></section>`).join("");
+  if (loose.length) html += `<section class="place"><h3 class="place-head">Not in a box</h3><div class="boxgrid"><button type="button" class="boxcard loose" data-act="open-loose"><span class="boxcard-label">Loose</span><span class="boxcard-count">${plural(loose.length, "item")}</span><span class="boxcard-cats">${esc(catSummary(loose))}</span></button></div></section>`;
+  if (!html) html = `<div class="empty"><strong>No boxes yet</strong>Boxes show up here, grouped by where they're kept. Add one now, or start one while you log an item.</div>`;
+  el.innerHTML = html;
+}
+
+/* ---------- sheets ---------- */
+const closeBtn = `<button type="button" class="icon-btn" data-act="close-sheet" aria-label="Close">${ICON.x}</button>`;
+function openSheet(type, html, extra) {
+  releaseSheetUrls();
+  const el = $("#sheet");
+  S.sheet = Object.assign({ type }, extra || {});
+  el.innerHTML = `<div class="scrim" data-act="close-sheet"></div><div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="sheet-title" tabindex="-1">${html}</div>`;
+  el.hidden = false;
+  document.documentElement.classList.add("locked");
+  const v = $("#vf-video"); if (v && cam.stream) v.pause();
+  const p = $(".sheet-panel", el);
+  try { p.focus({ preventScroll: true }); } catch (e) { p.focus(); }
+}
+function releaseSheetUrls() { for (const u of sheetUrls) URL.revokeObjectURL(u); sheetUrls = []; }
+function closeSheet(noBack) {
+  if (R && R.saving) return;
+  const back = S.sheet && S.sheet.back;
+  if (R) {
+    if (R.ctl) { try { R.ctl.abort(); } catch (e) { /* ignore */ } }
+    if (R.photoUrl) URL.revokeObjectURL(R.photoUrl);
+    R = null;
+  }
+  releaseSheetUrls();
+  pendingFile = null;
+  S.sheet = null;
+  const el = $("#sheet");
+  el.hidden = true; el.innerHTML = "";
+  document.documentElement.classList.remove("locked");
+  if (back && !noBack) {
+    if (back.type === "box" && boxMap.has(back.id)) { openBox(back.id); return; }
+    if (back.type === "loose") { openLoose(); return; }
+  }
+  const v = $("#vf-video");
+  if (cam.stream && v) v.play().catch(() => {});
+  else if (cam.wanted && S.tab === "scan" && !document.hidden) startCamera();
+}
+
+/* review: photo or typed item, then categorized cards, then a box, then save */
+const blankCard = () => ({ name: "", cat: CAT[ls.get("sm.lastCat", "")] ? ls.get("sm.lastCat", "") : "OTH", sub: "", desc: "", tags: [], qty: 1, fragile: false, conf: null, alts: [], tip: "", ai: false });
+function cleanAI(x) {
+  if (!x || typeof x !== "object") return null;
+  const code = String(x.cat || "").trim().toUpperCase();
+  return {
+    name: str(x.name, 120) || "Unnamed item", cat: CAT[code] ? code : "OTH", sub: str(x.sub, 40), desc: str(x.desc, 300),
+    tags: Array.isArray(x.tags) ? Array.from(new Set(x.tags.map(t => str(t, 30).toLowerCase()).filter(Boolean))).slice(0, 10) : [],
+    qty: clampInt(x.qty, 1, 999, 1), fragile: x.fragile === true,
+    conf: clampNum(x.confidence, 0, 1, null),
+    alts: Array.isArray(x.alternatives) ? x.alternatives.map(a => str(a, 60)).filter(Boolean).slice(0, 2) : [],
+    tip: str(x.tip, 160), ai: true
+  };
+}
+function startReview(file) {
+  if (!canWrite()) { toast("This browser isn't saving data for this site."); return; }
+  R = { file, status: file ? "prep" : "manual", cards: [], note: "", careful: false, boxChoice: { kind: "none" }, boxTouched: false, newBox: { label: null, place: "", edited: false }, ctl: null, started: 0, photoUrl: null, ai: null, store: null, thumbUrl: null, saving: false };
+  openSheet("review", `
+    <div class="sheet-head"><h2 id="sheet-title">${file ? "New photo" : "New item"}</h2>${closeBtn}</div>
+    <div class="sheet-body">
+      ${file ? `<div class="shot scanning" id="shot"><img id="shot-img" alt=""><span class="scanline" aria-hidden="true"></span><span class="vf-corner tl"></span><span class="vf-corner tr"></span><span class="vf-corner bl"></span><span class="vf-corner br"></span></div>` : ""}
+      <div id="review-status" aria-live="polite"></div>
+      <div id="review-cards" class="cards"></div>
+      <section id="review-box" class="boxsec" aria-label="Box"></section>
+    </div>
+    <div class="sheet-foot"><button type="button" class="btn" data-act="close-sheet">Cancel</button><button type="button" class="btn btn-primary" data-act="save-review" id="save-review">Save item</button></div>`);
+  if (!file) { R.cards = [blankCard()]; paintReview(); return; }
+  paintReview();
+  prepAndIdentify(R);
+}
+async function prepAndIdentify(r) {
+  try {
+    const p = await prepPhoto(r.file);
+    if (R !== r) return;
+    Object.assign(r, p);
+    r.photoUrl = URL.createObjectURL(p.store);
+    const img = $("#shot-img"); if (img) { img.src = r.photoUrl; img.alt = "Your photo"; }
+  } catch (e) {
+    if (R !== r) return;
+    r.status = "manual"; r.note = "This photo couldn't be opened. Try a JPEG or PNG, or fill in the details below.";
+    r.file = null; r.cards = [blankCard()];
+    const shot = $("#shot"); if (shot) shot.remove();
+    paintReview();
+    return;
+  }
+  if (aiOn()) identify(r, careful());
+  else { r.status = "manual"; r.cards = [blankCard()]; r.note = aiCopy({ code: "no_key" }); paintReview(); }
+}
+async function identify(r, carefulMode) {
+  r.status = "loading"; r.note = ""; r.careful = carefulMode; r.started = Date.now(); r.ctl = new AbortController();
+  paintReview();
+  try {
+    const res = await askJSON({ text: IDENTIFY_PROMPT, image: await blobToBase64(r.ai), careful: carefulMode, maxTokens: 6000, signal: r.ctl.signal });
+    if (R !== r) return;
+    const arr = res && Array.isArray(res.items) ? res.items : Array.isArray(res) ? res : [];
+    const cards = arr.slice(0, 10).map(cleanAI).filter(Boolean);
+    if (cards.length) { r.cards = cards; r.status = "done"; }
+    else { r.cards = [blankCard()]; r.status = "manual"; r.note = "No item was recognized. Retake the photo closer, or fill in the details below."; }
+  } catch (e) {
+    if (R !== r) return;
+    r.note = aiCopy(e);
+    if (r.cards.length && r.cards[0].ai) r.status = "done";
+    else { r.status = "manual"; r.cards = [blankCard()]; }
+  }
+  r.ctl = null;
+  if (R === r) paintReview();
+}
+function paintReview() { renderReviewStatus(); renderReviewCards(); renderReviewBox(); renderReviewFoot(); }
+function renderReviewStatus() {
+  const el = $("#review-status"); if (!el || !R) return;
+  const shot = $("#shot"); if (shot) shot.classList.toggle("scanning", R.status === "prep" || R.status === "loading");
+  if (R.status === "prep") { el.innerHTML = `<div class="status"><div class="status-text"><span class="status-title">Preparing photo…</span></div></div>`; return; }
+  if (R.status === "loading") {
+    el.innerHTML = `<div class="status"><div class="status-text"><span class="status-title">Identifying${R.careful ? " carefully" : ""}… <span class="mono tick" data-start="${R.started}">0s</span></span><span class="status-sub">Claude is looking at your photo.</span></div><button type="button" class="btn btn-sm" data-act="stop-id">Stop</button></div>`;
+    return;
+  }
+  const canAsk = R.file && R.ai && aiOn();
+  if (R.status === "done") {
+    const n = R.cards.length;
+    const again = canAsk ? `<button type="button" class="link inline" data-act="recheck">${R.careful ? "Check again" : "Re-check carefully"}</button>` : "";
+    el.innerHTML = (R.note ? `<div class="status warn"><div class="status-text"><span class="status-title">${esc(R.note)}</span></div></div>` : "")
+      + `<div class="status ok"><div class="status-text"><span class="status-title">${n > 1 ? `Found ${n} items` : "Identified"}</span><span class="status-sub">${n > 1 ? "Untick anything you don't want to log. " : "Check the details, then pick a box. "}${again}</span></div></div>`;
+    return;
+  }
+  el.innerHTML = R.note ? `<div class="status warn"><div class="status-text"><span class="status-title">${esc(R.note)}</span></div>${canAsk ? `<button type="button" class="btn btn-sm" data-act="retry-id">Try again</button>` : ""}</div>` : "";
+}
+const catOptions = sel => CATS.map(([c, n]) => `<option value="${c}"${c === sel ? " selected" : ""}>${c} · ${esc(n)}</option>`).join("");
+function cardHTML(c, i, multi) {
+  const p = "c" + i;
+  const canCat = !c.ai && aiOn();
+  const conf = c.conf != null ? `<span class="conf${c.conf < 0.6 ? " low" : ""}">${Math.round(c.conf * 100)}% sure</span>` : "";
+  const alts = c.alts.length ? `<span class="alts"><span>Could also be</span>${c.alts.map(a => `<button type="button" class="chip chip-sm" data-act="use-alt" data-i="${i}" data-alt="${esc(a)}">${esc(a)}</button>`).join("")}</span>` : "";
+  return `<article class="card" data-i="${i}">
+    ${multi ? `<label class="keep-row" for="${p}-keep"><input type="checkbox" id="${p}-keep" class="keep" checked><span>Include item ${i + 1}</span></label>` : ""}
+    <div class="field"><label for="${p}-name">Name</label><div class="name-row"><input id="${p}-name" class="in name" data-i="${i}" maxlength="120" value="${esc(c.name)}" placeholder="What is it?" autocomplete="off">${canCat ? `<button type="button" class="btn btn-sm" data-act="categorize" data-i="${i}">Categorize</button>` : ""}</div></div>
+    ${conf || alts ? `<div class="idline">${conf}${alts}</div>` : ""}
+    <div class="grid-cq">
+      <div class="field"><label for="${p}-cat">Category</label><select id="${p}-cat" class="in cat">${catOptions(c.cat)}</select></div>
+      <div class="field"><label for="${p}-qty">Qty</label><input id="${p}-qty" class="in qty" type="number" inputmode="numeric" min="1" max="999" value="${c.qty}"></div>
+    </div>
+    <label class="check" for="${p}-fragile"><input type="checkbox" id="${p}-fragile" class="fragile"${c.fragile ? " checked" : ""}><span>Fragile</span></label>
+    <div class="field"><label for="${p}-tags">Search tags</label><input id="${p}-tags" class="in tags" value="${esc(c.tags.join(", "))}" placeholder="pan, cookware, cast iron" autocomplete="off"></div>
+    <div class="field"><label for="${p}-notes">Notes</label><input id="${p}-notes" class="in notes" maxlength="600" placeholder="Optional" autocomplete="off"></div>
+    ${c.tip ? `<p class="tip"><span class="eyebrow">Packing tip</span>${esc(c.tip)}</p>` : ""}
+    <div class="dupes" id="${p}-dupes"></div>
+  </article>`;
+}
+function renderReviewCards() {
+  const el = $("#review-cards"); if (!el || !R) return;
+  if (R.status === "prep" || R.status === "loading") {
+    el.innerHTML = `<div class="card skel-card" aria-hidden="true"><span class="skel w60"></span><span class="skel w90"></span><span class="skel w40"></span></div>`;
+    return;
+  }
+  const multi = R.cards.length > 1;
+  el.innerHTML = R.cards.map((c, i) => cardHTML(c, i, multi)).join("");
+  R.cards.forEach((_, i) => refreshDupes(i));
+}
+function refreshDupes(i) {
+  const el = $("#c" + i + "-dupes"), input = $("#c" + i + "-name");
+  if (!el || !input) return;
+  const name = input.value;
+  if (norm(name).length < 3 || !S.items.length) { el.innerHTML = ""; return; }
+  const hits = rank(name, S.items).filter(h => h.score >= 0.6).slice(0, 2);
+  el.innerHTML = hits.length ? `<span class="eyebrow">Similar item already logged</span>` + hits.map(h => {
+    const b = boxMap.get(h.item.box);
+    return `<span class="dupe"><b>${esc(h.item.name)}</b> ${b ? "in " + esc(b.label) + (b.place ? " · " + esc(b.place) : "") : "not in a box"}</span>`;
+  }).join("") : "";
+}
+const keptCards = () => $$("#review-cards .card").filter(c => { const k = $(".keep", c); return !k || k.checked; });
+function mainCat() {
+  const sel = keptCards().map(c => $(".cat", c).value);
+  const list = sel.length ? sel : R.cards.map(c => c.cat);
+  const cnt = {}; let best = list[0] || "OTH";
+  for (const c of list) { cnt[c] = (cnt[c] || 0) + 1; if (cnt[c] > (cnt[best] || 0)) best = c; }
+  return CAT[best] ? best : "OTH";
+}
+function nextLabel(prefix) {
+  let max = 0;
+  const re = new RegExp("^" + prefix + "-(\\d+)$", "i");
+  for (const b of S.boxes) { const m = re.exec(b.label.trim()); if (m) max = Math.max(max, parseInt(m[1], 10)); }
+  return prefix + "-" + String(max + 1).padStart(2, "0");
+}
+function suggestBox(cat) {
+  if (!S.boxes.length) return null;
+  const kind = CAT[cat].toLowerCase();
+  const inCat = id => (byBox.get(id) || []).filter(i => i.cat === cat).length;
+  const last = boxMap.get(ls.get("sm.lastBox", ""));
+  if (last) {
+    const n = inCat(last.id);
+    if (n > 0) return { box: last, why: `${last.label} already holds ${plural(n, kind + " item")}` };
+    if (!(byBox.get(last.id) || []).length) return { box: last, why: `${last.label} is the box you started` };
+  }
+  let best = null, bestN = 0;
+  for (const b of S.boxes) {
+    const n = inCat(b.id);
+    if (n > bestN || (n === bestN && n > 0 && b.createdAt > best.createdAt)) { best = b; bestN = n; }
+  }
+  return best ? { box: best, why: `${best.label} already holds ${plural(bestN, kind + " item")}` } : null;
+}
+function renderReviewBox() {
+  const el = $("#review-box"); if (!el || !R) return;
+  if (R.status === "prep" || R.status === "loading") { el.innerHTML = ""; return; }
+  const cat = mainCat();
+  const sug = suggestBox(cat);
+  const lastId = ls.get("sm.lastBox", "");
+  if (!R.boxTouched) R.boxChoice = sug ? { kind: "box", id: sug.box.id } : { kind: "none" };
+  if (R.boxChoice.kind === "box" && !boxMap.has(R.boxChoice.id)) R.boxChoice = { kind: "none" };
+  if (!R.newBox.edited) R.newBox.label = nextLabel(cat);
+  const ordered = [];
+  if (sug) ordered.push(sug.box);
+  const last = boxMap.get(lastId);
+  if (last && ordered.indexOf(last) < 0) ordered.push(last);
+  for (const b of S.boxes.slice().sort(byLabel)) if (ordered.indexOf(b) < 0) ordered.push(b);
+  const ch = R.boxChoice;
+  const chips = ordered.map(b => {
+    const on = ch.kind === "box" && ch.id === b.id;
+    const tag = sug && sug.box === b ? "Suggested" : b.id === lastId ? "Last used" : "";
+    return `<button type="button" class="boxchip${on ? " on" : ""}" role="radio" aria-checked="${on}" data-act="box-pick" data-id="${esc(b.id)}">${tag ? `<span class="bc-tag">${tag}</span>` : ""}<span class="bc-label">${esc(b.label)}</span><span class="bc-place">${esc(b.place || "No place set")}</span></button>`;
+  }).join("");
+  const why = sug ? sug.why : !S.boxes.length ? "No boxes yet. Start one, or log it without a box." : cat === "OTH" ? "No box holds items like this yet" : `No box holds ${CAT[cat].toLowerCase()} items yet`;
+  el.innerHTML = `
+    <div class="field-head"><span class="label" id="boxpick-label">Put it in</span><span class="sug-why">${esc(why)}</span></div>
+    <div class="boxpick" role="radiogroup" aria-labelledby="boxpick-label">${chips}
+      <button type="button" class="boxchip new${ch.kind === "new" ? " on" : ""}" role="radio" aria-checked="${ch.kind === "new"}" data-act="box-new">+ New box</button>
+      <button type="button" class="boxchip none${ch.kind === "none" ? " on" : ""}" role="radio" aria-checked="${ch.kind === "none"}" data-act="box-none">No box yet</button>
+    </div>
+    ${ch.kind === "new" ? `<div class="newbox"><div class="field"><label for="nb-label">Box label</label><input id="nb-label" class="in in-stencil" maxlength="24" value="${esc(R.newBox.label)}" autocomplete="off"></div><div class="field"><label for="nb-place">Where it goes</label><input id="nb-place" class="in" list="places" maxlength="60" value="${esc(R.newBox.place)}" placeholder="Garage shelf 2, attic, unit 112" autocomplete="off"></div></div>` : ""}`;
+}
+function renderReviewFoot() {
+  const b = $("#save-review"); if (!b || !R) return;
+  const busy = R.status === "prep" || R.status === "loading" || R.saving;
+  const n = busy ? 0 : keptCards().length;
+  b.disabled = busy || n === 0;
+  b.textContent = R.saving ? "Saving…" : n > 1 ? `Save ${n} items` : "Save item";
+}
+async function saveReview() {
+  if (!R || R.saving) return;
+  const cards = keptCards();
+  if (!cards.length) { toast("Choose at least one item to log."); return; }
+  const rows = [];
+  for (const c of cards) {
+    const base = R.cards[parseInt(c.dataset.i, 10)] || blankCard();
+    const nameEl = $(".name", c), name = nameEl.value.trim();
+    if (!name) { nameEl.focus(); toast("Give each item a name."); return; }
+    const cat = $(".cat", c).value;
+    rows.push({
+      name: name.slice(0, 120), cat: CAT[cat] ? cat : "OTH", sub: base.sub || "", desc: base.desc || "", tip: base.tip || "",
+      tags: splitTags($(".tags", c).value), qty: clampInt($(".qty", c).value, 1, 999, 1),
+      fragile: $(".fragile", c).checked, notes: $(".notes", c).value.trim().slice(0, 600), conf: base.conf
+    });
+  }
+  const ch = R.boxChoice;
+  let newBox = null;
+  if (ch.kind === "new") {
+    const label = (($("#nb-label") || {}).value || "").trim() || nextLabel(rows[0].cat);
+    newBox = { id: uid(), label: label.slice(0, 24), place: (($("#nb-place") || {}).value || "").trim().slice(0, 60), createdAt: Date.now() };
+  }
+  const r = R;
+  r.saving = true; renderReviewFoot();
+  try {
+    let photo = null;
+    if (r.store) photo = await putPhoto(r.store);
+    let boxId = ch.kind === "box" && boxMap.has(ch.id) ? ch.id : null;
+    if (newBox) { await saveBox(newBox); boxId = newBox.id; }
+    const now = Date.now();
+    await saveItems(rows.map((row, k) => normItem(Object.assign({}, row, { id: uid(), box: boxId, photo, thumb: photo ? r.thumbUrl : null, createdAt: now + k, updatedAt: now + k }))));
+    if (boxId) ls.set("sm.lastBox", boxId);
+    ls.set("sm.lastCat", rows[rows.length - 1].cat);
+    const label = boxId && boxMap.get(boxId) ? boxMap.get(boxId).label : newBox ? newBox.label : "";
+    r.saving = false;
+    reindex(); renderAll();
+    if (R === r) closeSheet(true);
+    toast(`Logged ${plural(rows.length, "item")}${label ? " in " + label : ""}`);
+  } catch (e) {
+    r.saving = false;
+    if (R === r) renderReviewFoot();
+    toast(storeErrCopy(e));
+  }
+}
+async function categorize(i, btn) {
+  const input = $("#c" + i + "-name"), name = input ? input.value.trim() : "";
+  if (!name) { if (input) input.focus(); toast("Type a name first."); return; }
+  btn.disabled = true; const old = btn.textContent; btn.textContent = "Thinking…";
+  try {
+    const res = await askJSON({ text: categorizePrompt(name), maxTokens: 2000 });
+    const card = $(`#review-cards .card[data-i="${i}"]`);
+    if (!card || !R) return;
+    const code = res && String(res.cat || "").toUpperCase();
+    if (CAT[code]) $(".cat", card).value = code;
+    const tags = $(".tags", card);
+    if (res && Array.isArray(res.tags) && !tags.value.trim()) tags.value = res.tags.map(t => str(t, 30).toLowerCase()).filter(Boolean).slice(0, 8).join(", ");
+    if (res && typeof res.fragile === "boolean") $(".fragile", card).checked = res.fragile;
+    const c = R.cards[i];
+    if (c && res) { c.sub = str(res.sub, 40); c.tip = str(res.tip, 160); }
+    renderReviewBox();
+  } catch (e) {
+    toast(e && e.code && e.code !== "invalid_json" && e.code !== "empty" ? aiCopy(e).split(". ")[0] + "." : "Couldn't categorize that. Pick a category yourself.");
+  } finally {
+    if (btn.isConnected) { btn.disabled = false; btn.textContent = old; }
+  }
+}
+
+/* photo match */
+async function startMatch(file) {
+  if (S.match && S.match.ctl) { try { S.match.ctl.abort(); } catch (e) { /* ignore */ } }
+  const m = { status: "prep", started: Date.now(), ctl: new AbortController(), photoUrl: null };
+  S.match = m; renderMatch();
+  let blob;
+  try {
+    const src = await decodeImage(file);
+    try { blob = await encodeJpeg(src, 1280, 0.85); } finally { if (src.close) { try { src.close(); } catch (e) { /* ignore */ } } }
+  } catch (e) {
+    if (S.match === m) { S.match = { status: "error", msg: "This photo couldn't be opened. Try a JPEG or PNG." }; renderMatch(); }
+    return;
+  }
+  if (S.match !== m) return;
+  m.photoUrl = URL.createObjectURL(blob); m.status = "loading"; renderMatch();
+  try {
+    const image = await blobToBase64(blob);
+    let pool = S.items;
+    if (pool.length > 400) {
+      const seen = await askJSON({ text: DESCRIBE_PROMPT, image, maxTokens: 2000, signal: m.ctl.signal });
+      const q = [str(seen && seen.name, 80)].concat(seen && Array.isArray(seen.tags) ? seen.tags.map(t => str(t, 30)) : []).join(" ");
+      const ranked = rank(q, pool).slice(0, 300).map(h => h.item);
+      pool = ranked.length >= 20 ? ranked : pool.slice().sort(newest).slice(0, 400);
+    }
+    const refs = new Map();
+    const lines = pool.map((it, k) => {
+      const ref = "i" + (k + 1); refs.set(ref, it.id);
+      return `${ref} | ${clip(it.name, 80)} | ${it.cat} ${CAT[it.cat]} | ${clip(it.desc || it.sub, 120)} | ${clip(it.tags.slice(0, 6).join(", "), 80)}`;
+    }).join("\n");
+    const res = await askJSON({ text: matchPrompt(lines), image, careful: careful(), maxTokens: 6000, signal: m.ctl.signal });
+    if (S.match !== m) return;
+    const used = new Set();
+    const matches = (res && Array.isArray(res.matches) ? res.matches : [])
+      .map(x => ({ id: refs.get(String((x && x.ref) || "").trim()), score: clampNum(x && x.score, 0, 1, 0), why: str(x && x.why, 140) }))
+      .filter(x => x.id && !used.has(x.id) && used.add(x.id))
+      .sort((a, b) => b.score - a.score).slice(0, 5);
+    S.match = { status: "done", seen: str(res && res.seen, 80), matches, photoUrl: m.photoUrl };
+  } catch (e) {
+    if (S.match !== m) return;
+    if (e && e.code === "cancelled") { URL.revokeObjectURL(m.photoUrl); S.match = null; }
+    else S.match = { status: "error", photoUrl: m.photoUrl, msg: aiCopy(e).replace(", or fill in the details below", "").replace(" Fill in the details below.", "") };
+  }
+  renderLog();
+}
+function clearMatch() {
+  if (S.match) {
+    if (S.match.ctl) { try { S.match.ctl.abort(); } catch (e) { /* ignore */ } }
+    if (S.match.photoUrl) URL.revokeObjectURL(S.match.photoUrl);
+  }
+  S.match = null; renderMatch();
+}
+
+/* item sheet */
+function openItem(id, back) {
+  const it = getItem(id); if (!it) return;
+  const b = it.box && boxMap.get(it.box);
+  const boxOpts = `<option value="">No box yet</option>` + S.boxes.slice().sort(byLabel).map(x => `<option value="${esc(x.id)}"${x.id === it.box ? " selected" : ""}>${esc(x.label)}${x.place ? " · " + esc(x.place) : ""}</option>`).join("");
+  openSheet("item", `
+    <div class="sheet-head"><h2 id="sheet-title">${back ? "Item in " + esc(back.label) : "Item"}</h2><button type="button" class="icon-btn" data-act="close-sheet" aria-label="${back ? "Back" : "Close"}">${back ? ICON.back : ICON.x}</button></div>
+    <div class="sheet-body">
+      ${it.thumb || it.photo ? `<div class="photo-lg"><img id="it-photo" src="${esc(it.thumb || "")}" alt="Photo of ${esc(it.name)}" data-ph="1"><span class="ph"><span>${esc(it.cat)}</span></span></div>` : `<button type="button" class="btn" data-act="item-photo" data-id="${esc(it.id)}">${ICON.camera}Add a photo</button>`}
+      <div class="where${b ? "" : " unboxed"}"><span class="eyebrow">Stored in</span><span class="where-box">${b ? esc(b.label) : "No box yet"}</span>${b ? `<span class="where-place">${esc(b.place || "No place set")}</span>` : ""}</div>
+      <div class="field"><label for="it-name">Name</label><input id="it-name" class="in name" maxlength="120" value="${esc(it.name)}" autocomplete="off"></div>
+      <div class="grid-cq">
+        <div class="field"><label for="it-cat">Category</label><select id="it-cat" class="in">${catOptions(it.cat)}</select></div>
+        <div class="field"><label for="it-qty">Qty</label><input id="it-qty" class="in" type="number" inputmode="numeric" min="1" max="999" value="${it.qty}"></div>
+      </div>
+      <label class="check" for="it-fragile"><input type="checkbox" id="it-fragile"${it.fragile ? " checked" : ""}><span>Fragile</span></label>
+      <div class="field"><label for="it-box">Box</label><select id="it-box" class="in">${boxOpts}</select></div>
+      <div class="field"><label for="it-tags">Search tags</label><input id="it-tags" class="in" value="${esc(it.tags.join(", "))}" autocomplete="off"></div>
+      <div class="field"><label for="it-notes">Notes</label><textarea id="it-notes" class="in" maxlength="600">${esc(it.notes)}</textarea></div>
+      <div class="field"><label for="it-desc">What it looks like (helps photo matching)</label><textarea id="it-desc" class="in" maxlength="400">${esc(it.desc)}</textarea></div>
+      ${it.tip ? `<div class="tipbox"><span class="eyebrow">Packing tip</span><p>${esc(it.tip)}</p></div>` : ""}
+      <p class="meta mono">Logged ${esc(fmtDate(it.createdAt))}${it.updatedAt > it.createdAt + 2000 ? " · edited " + esc(fmtDate(it.updatedAt)) : ""}</p>
+    </div>
+    <div class="sheet-foot"><button type="button" class="btn btn-danger" data-act="del-item" data-id="${esc(it.id)}">Delete</button><button type="button" class="btn btn-primary" data-act="save-item" data-id="${esc(it.id)}">Save changes</button></div>`,
+  { id, back: back || null });
+  if (it.photo) photoUrl(it.photo).then(url => { const img = $("#it-photo"); if (url && img && S.sheet && S.sheet.id === id) { img.hidden = false; img.src = url; } }).catch(() => {});
+}
+async function saveItem(id) {
+  const it = getItem(id); if (!it) return;
+  const name = $("#it-name").value.trim();
+  if (!name) { toast("Give the item a name."); return; }
+  const cat = $("#it-cat").value;
+  const next = normItem(Object.assign({}, it, {
+    name: name.slice(0, 120), cat: CAT[cat] ? cat : "OTH", qty: clampInt($("#it-qty").value, 1, 999, 1),
+    fragile: $("#it-fragile").checked, box: $("#it-box").value || null, tags: splitTags($("#it-tags").value),
+    notes: $("#it-notes").value.trim().slice(0, 600), desc: $("#it-desc").value.trim().slice(0, 400), updatedAt: Date.now()
+  }));
+  try { await saveItems([next]); reindex(); renderAll(); closeSheet(); toast("Saved"); }
+  catch (e) { toast(storeErrCopy(e)); }
+}
+async function delItem(id, btn) {
+  if (!armed(btn, "Tap again to delete")) return;
+  const it = getItem(id);
+  try {
+    await store.del("items", id);
+    S.items = S.items.filter(x => x.id !== id);
+    if (it && it.photo) await removePhotoIfUnused(it.photo, id);
+    reindex(); renderAll(); closeSheet(); toast("Item deleted");
+  } catch (e) { toast(storeErrCopy(e)); }
+}
+async function addItemPhoto(id, file) {
+  const it = getItem(id); if (!it) return;
+  toast("Saving photo…");
+  try {
+    const p = await prepPhoto(file);
+    const photo = await putPhoto(p.store);
+    await saveItems([normItem(Object.assign({}, it, { photo, thumb: p.thumbUrl, updatedAt: Date.now() }))]);
+    reindex(); renderAll();
+    toast("Photo added");
+    if (S.sheet && S.sheet.type === "item" && S.sheet.id === id) openItem(id, S.sheet.back);
+  } catch (e) { toast(e && e.name === "QuotaExceededError" ? storeErrCopy(e) : "That photo couldn't be opened. Try a JPEG or PNG."); }
+}
+function armed(btn, text) {
+  if (btn.dataset.armed === "1") return true;
+  const old = btn.innerHTML;
+  btn.dataset.armed = "1"; btn.textContent = text; btn.classList.add("armed");
+  setTimeout(() => { if (btn.isConnected && btn.dataset.armed === "1") { btn.dataset.armed = ""; btn.innerHTML = old; btn.classList.remove("armed"); } }, 3500);
+  return false;
+}
+
+/* box sheets */
+function openBox(id) {
+  const b = boxMap.get(id); if (!b) return;
+  openSheet("box", `
+    <div class="sheet-head"><h2 id="sheet-title">Box</h2>${closeBtn}</div>
+    <div class="sheet-body">
+      <div class="boxhero"><span class="tape" aria-hidden="true"></span><span class="boxhero-label" id="bh-label">${esc(b.label)}</span><span class="boxhero-place" id="bh-place">${esc(b.place || "No place set")}</span></div>
+      <div class="grid2"><div class="field"><label for="box-label">Label</label><input id="box-label" class="in in-stencil" maxlength="24" value="${esc(b.label)}" autocomplete="off"></div><div class="field"><label for="box-place">Where it is</label><input id="box-place" class="in" list="places" maxlength="60" value="${esc(b.place)}" placeholder="Garage shelf 2, attic, unit 112" autocomplete="off"></div></div>
+      <div class="section-head"><h3 class="h3">Packing list</h3><button type="button" class="btn btn-sm" data-act="copy-list">${ICON.copy}Copy list</button></div>
+      <div id="box-list"></div>
+      <textarea id="copy-fallback" class="in copy-fallback" aria-label="Packing list text" readonly hidden></textarea>
+    </div>
+    <div class="sheet-foot"><button type="button" class="btn btn-danger" data-act="del-box" data-id="${esc(b.id)}">Delete box</button><button type="button" class="btn btn-primary" data-act="save-box" data-id="${esc(b.id)}">Save changes</button></div>`,
+  { id });
+  renderBoxList();
+}
+function openLoose() {
+  openSheet("loose", `
+    <div class="sheet-head"><h2 id="sheet-title">Not in a box</h2>${closeBtn}</div>
+    <div class="sheet-body"><p class="hint">Open an item to put it in a box.</p><div id="box-list"></div></div>`, { id: "" });
+  renderBoxList();
+}
+function openNewBox() {
+  if (!canWrite()) return;
+  const label = nextLabel("BOX");
+  openSheet("newbox", `
+    <div class="sheet-head"><h2 id="sheet-title">New box</h2>${closeBtn}</div>
+    <div class="sheet-body">
+      <div class="boxhero"><span class="tape" aria-hidden="true"></span><span class="boxhero-label" id="bh-label">${esc(label)}</span><span class="boxhero-place" id="bh-place">No place set</span></div>
+      <div class="grid2"><div class="field"><label for="box-label">Label</label><input id="box-label" class="in in-stencil" maxlength="24" value="${esc(label)}" autocomplete="off"></div><div class="field"><label for="box-place">Where it is</label><input id="box-place" class="in" list="places" maxlength="60" placeholder="Garage shelf 2, attic, unit 112" autocomplete="off"></div></div>
+      <p class="hint">Starting a label with a category code, like KIT-01 or HOL-02, makes boxes easy to tell apart on a shelf.</p>
+    </div>
+    <div class="sheet-foot"><button type="button" class="btn" data-act="close-sheet">Cancel</button><button type="button" class="btn btn-primary" data-act="create-box">Create box</button></div>`);
+}
+function boxItems() {
+  const sh = S.sheet;
+  return ((sh.type === "box" ? byBox.get(sh.id) : byBox.get("")) || []).slice().sort((a, b) => a.cat.localeCompare(b.cat) || a.name.localeCompare(b.name));
+}
+function renderBoxList() {
+  const sh = S.sheet;
+  if (!sh || (sh.type !== "box" && sh.type !== "loose")) return;
+  const el = $("#box-list"); if (!el) return;
+  const items = boxItems();
+  const pieces = items.reduce((n, i) => n + i.qty, 0);
+  el.innerHTML = items.length
+    ? `<p class="meta" style="margin-bottom:8px">${plural(items.length, "item")} · ${plural(pieces, "piece")}${items.some(i => i.fragile) ? ` · <span class="flag-fragile">Has fragile items</span>` : ""}</p><div class="rows">${items.map(i => rowHTML(i, { noLoc: true })).join("")}</div>`
+    : `<div class="empty">${sh.type === "box" ? "This box is empty. Pick it when you log an item." : "Everything is in a box."}</div>`;
+}
+async function createBox() {
+  const label = $("#box-label").value.trim(), place = $("#box-place").value.trim();
+  if (!label) { toast("Give the box a label."); return; }
+  try {
+    const b = { id: uid(), label: label.slice(0, 24), place: place.slice(0, 60), createdAt: Date.now() };
+    await saveBox(b);
+    ls.set("sm.lastBox", b.id);
+    reindex(); renderAll(); closeSheet(); toast(b.label + " created");
+  } catch (e) { toast(storeErrCopy(e)); }
+}
+async function updateBox(id) {
+  const b = boxMap.get(id); if (!b) return;
+  const label = $("#box-label").value.trim(), place = $("#box-place").value.trim();
+  if (!label) { toast("Give the box a label."); return; }
+  try { await saveBox(Object.assign({}, b, { label: label.slice(0, 24), place: place.slice(0, 60) })); reindex(); renderAll(); closeSheet(); toast("Box updated"); }
+  catch (e) { toast(storeErrCopy(e)); }
+}
+async function delBox(id, btn) {
+  if (!armed(btn, "Tap again to delete")) return;
+  const items = byBox.get(id) || [];
+  try {
+    if (items.length) await saveItems(items.map(it => normItem(Object.assign({}, it, { box: null, updatedAt: Date.now() }))));
+    await store.del("boxes", id);
+    S.boxes = S.boxes.filter(b => b.id !== id);
+    if (ls.get("sm.lastBox", "") === id) ls.del("sm.lastBox");
+    reindex(); renderAll(); closeSheet(true);
+    toast(items.length ? `Box deleted. ${plural(items.length, "item")} moved to Loose.` : "Box deleted");
+  } catch (e) { toast(storeErrCopy(e)); }
+}
+function copyList() {
+  const sh = S.sheet, b = sh && boxMap.get(sh.id);
+  if (!b) return;
+  const items = boxItems();
+  const text = [b.label + (b.place ? " · " + b.place : ""), plural(items.length, "item") + (items.some(i => i.fragile) ? " · FRAGILE" : ""), ""]
+    .concat(items.map(i => "- " + i.name + (i.qty > 1 ? " x" + i.qty : "") + (i.fragile ? " (fragile)" : ""))).join("\n");
+  const fallback = () => { const ta = $("#copy-fallback"); if (!ta) return; ta.hidden = false; ta.value = text; ta.focus(); ta.select(); toast("Select the list below and copy it"); };
+  try { navigator.clipboard.writeText(text).then(() => toast("Packing list copied"), fallback); } catch (e) { fallback(); }
+}
+
+/* settings, backup, export */
+function openSettings() {
+  const key = getKey(), m = models();
+  openSheet("settings", `
+    <div class="sheet-head"><h2 id="sheet-title">Settings</h2>${closeBtn}</div>
+    <div class="sheet-body">
+      <section class="setsec">
+        <h3 class="h3">Claude API key</h3>
+        <div class="state-line"><span class="dot${key ? " on" : " warn"}"></span><span id="key-state">${key ? "Saved on this phone only" : "Not set. Photos won't be identified until you add one."}</span></div>
+        <div class="field"><label for="set-key">${key ? "Replace key" : "Paste your key"}</label><input id="set-key" class="in mono" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="sk-ant-..."></div>
+        <div class="btn-row"><button type="button" class="btn btn-primary btn-sm" data-act="key-save">Save key</button>${key ? `<button type="button" class="btn btn-sm" data-act="key-test">Test key</button><button type="button" class="btn btn-sm btn-danger" data-act="key-remove">Remove</button>` : ""}</div>
+        <p class="hint">Create a key in the Claude Console and set a monthly spend limit there. The key is stored in this browser and is never part of the app's code. Each photo costs a fraction of a cent on the fast model.</p>
+        <details><summary>Models</summary>
+          <div class="grid2"><div class="field"><label for="set-fast">Fast</label><input id="set-fast" class="in mono" value="${esc(m.fast)}" autocomplete="off" autocapitalize="off" spellcheck="false"></div><div class="field"><label for="set-careful">Careful mode</label><input id="set-careful" class="in mono" value="${esc(m.careful)}" autocomplete="off" autocapitalize="off" spellcheck="false"></div></div>
+          <div class="btn-row" style="margin-top:10px"><button type="button" class="btn btn-sm" data-act="models-save">Save models</button><button type="button" class="btn btn-sm" data-act="models-reset">Reset to defaults</button></div>
+        </details>
+      </section>
+      <section class="setsec">
+        <h3 class="h3">Backup</h3>
+        <div class="state-line"><span class="dot" id="bk-dot"></span><span id="bk-state"></span></div>
+        <label class="check plain" for="bk-photos"><input type="checkbox" id="bk-photos" checked><span>Include photos</span></label>
+        <div class="btn-row"><button type="button" class="btn btn-primary btn-sm" data-act="backup">Save backup file</button><button type="button" class="btn btn-sm" data-act="restore">Restore from file</button></div>
+        <div id="pending-save"></div>
+        <p class="hint">Your log lives in this browser. Browsers can clear site data, so save a backup after packing sessions and keep it in Files or iCloud. Restoring adds the backup's items and boxes to this phone.</p>
+      </section>
+      <section class="setsec">
+        <h3 class="h3">This phone</h3>
+        <div class="state-line"><span class="dot" id="persist-dot"></span><span id="persist-state">Checking storage…</span></div>
+        <p class="meta">${plural(S.items.length, "item")} and ${plural(S.boxes.length, "box", "boxes")} saved here.</p>
+        <div class="btn-row"><button type="button" class="btn btn-sm" data-act="export-csv">${ICON.download}Export CSV</button><button type="button" class="btn btn-sm btn-danger" data-act="wipe">Delete everything</button></div>
+      </section>
+      <p class="meta mono version">Storage Manifest ${VERSION}</p>
+    </div>`);
+  renderSettingsBackup();
+  (async () => {
+    let persisted = null;
+    try { if (navigator.storage && navigator.storage.persisted) persisted = await navigator.storage.persisted(); } catch (e) { /* unknown */ }
+    const dot = $("#persist-dot"), st = $("#persist-state");
+    if (!dot || !st) return;
+    dot.className = "dot" + (persisted ? " on" : " warn");
+    st.textContent = persisted ? "Storage is marked as persistent" : "The browser may clear this data if space runs low. Keep backups.";
+  })();
+}
+function renderSettingsBackup() {
+  const st = $("#bk-state"), dot = $("#bk-dot");
+  if (!st || !dot) return;
+  const last = Number(ls.get("sm.lastBackup", "0"));
+  st.textContent = last ? "Last backup " + fmtDate(last) : "No backup yet";
+  dot.className = "dot" + (last && Date.now() - last < 14 * 864e5 ? " on" : " warn");
+  const ps = $("#pending-save");
+  if (ps) ps.innerHTML = pendingFile ? `<button type="button" class="btn btn-sm" data-act="save-pending">${ICON.download}Save ${esc(pendingFile.name)}</button>` : "";
+}
+async function offerFile(file) {
+  if (navigator.canShare && navigator.share) {
+    let ok = false;
+    try { ok = navigator.canShare({ files: [file] }); } catch (e) { ok = false; }
+    if (ok) {
+      try { await navigator.share({ files: [file], title: file.name }); return "shared"; }
+      catch (e) {
+        if (e && e.name === "AbortError") return "cancelled";
+        if (e && e.name === "NotAllowedError") return "needs-tap";
+      }
+    }
+  }
+  const url = URL.createObjectURL(file);
+  const a = document.createElement("a");
+  a.href = url; a.download = file.name; a.rel = "noopener";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+  return "downloaded";
+}
+async function deliver(file, onDone) {
+  const how = await offerFile(file);
+  if (how === "needs-tap") { pendingFile = { file, onDone, name: file.name }; renderSettingsBackup(); toast("Ready. Tap the save button to finish."); return; }
+  pendingFile = null; renderSettingsBackup();
+  if (how !== "cancelled" && onDone) onDone(how);
+}
+async function makeBackup(btn) {
+  btn.disabled = true; const old = btn.innerHTML; btn.textContent = "Preparing…";
+  try {
+    const withPhotos = $("#bk-photos") ? $("#bk-photos").checked : true;
+    const photos = {};
+    if (withPhotos) {
+      for (const id of new Set(S.items.map(i => i.photo).filter(Boolean))) {
+        const p = await store.get("photos", id);
+        if (p && p.buf) photos[id] = await blobToDataUrl(new Blob([p.buf], { type: p.type || "image/jpeg" }));
+      }
+    }
+    const data = { app: "storage-manifest", format: 1, exportedAt: new Date().toISOString(), items: S.items.map(plainItem), boxes: S.boxes.map(b => Object.assign({}, b)), photos };
+    const file = new File([JSON.stringify(data)], "storage-manifest-backup-" + isoDay(Date.now()) + ".json", { type: "application/json" });
+    await deliver(file, how => { ls.set("sm.lastBackup", String(Date.now())); renderSettingsBackup(); renderScan(); toast(how === "shared" ? "Backup saved" : "Backup downloaded"); });
+  } catch (e) { toast("Couldn't create the backup."); }
+  finally { if (btn.isConnected) { btn.disabled = false; btn.innerHTML = old; } }
+}
+async function restoreBackup(file) {
+  let data;
+  try { data = JSON.parse(await file.text()); } catch (e) { toast("That file isn't a Storage Manifest backup."); return; }
+  if (!data || data.app !== "storage-manifest" || !Array.isArray(data.items) || !Array.isArray(data.boxes)) { toast("That file isn't a Storage Manifest backup."); return; }
+  try {
+    const items = data.items.map(normItem).filter(i => i.id);
+    const boxes = data.boxes.map(normBox).filter(b => b.id);
+    const photoEntries = [];
+    const src = data.photos && typeof data.photos === "object" ? data.photos : {};
+    for (const [id, url] of Object.entries(src)) {
+      if (!/^[A-Za-z0-9_-]{8,80}$/.test(id) || typeof url !== "string" || !/^data:image\/(jpeg|png|webp);base64,/.test(url)) continue;
+      const buf = await (await fetch(url)).arrayBuffer();
+      photoEntries.push([id, { type: url.slice(5, url.indexOf(";")), buf }]);
+    }
+    for (const it of items) if (it.photo && !src[it.photo]) {
+      const have = await store.get("photos", it.photo).catch(() => null);
+      if (!have) it.photo = null;
+    }
+    if (photoEntries.length) await store.putMany("photos", photoEntries);
+    await store.putMany("boxes", boxes.map(b => [b.id, b]));
+    await store.putMany("items", items.map(it => [it.id, plainItem(it)]));
+    await loadAll();
+    askPersist();
+    toast(`Restored ${plural(items.length, "item")} and ${plural(boxes.length, "box", "boxes")}`);
+    if (S.sheet && S.sheet.type === "settings") openSettings();
+  } catch (e) { toast(storeErrCopy(e)); }
+}
+const csvCell = v => { let s = v == null ? "" : String(v); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+function exportCsv() {
+  if (!S.items.length) { toast("Nothing to export yet."); return; }
+  const head = ["Name", "Category", "Subcategory", "Qty", "Fragile", "Box", "Place", "Tags", "Notes", "Description", "Logged"];
+  const rows = S.items.slice().sort(newest).map(i => { const b = i.box && boxMap.get(i.box); return [i.name, CAT[i.cat], i.sub, i.qty, i.fragile ? "yes" : "", b ? b.label : "", b ? b.place : "", i.tags.join(", "), i.notes, i.desc, i.createdAt ? isoDay(i.createdAt) : ""]; });
+  const csv = [head].concat(rows).map(r => r.map(csvCell).join(",")).join("\r\n");
+  deliver(new File([csv], "storage-manifest-" + isoDay(Date.now()) + ".csv", { type: "text/csv" }), how => toast(how === "shared" ? "CSV ready" : "CSV downloaded"));
+}
+async function wipeAll(btn) {
+  if (!armed(btn, "Tap again to delete all")) return;
+  try {
+    await Promise.all([store.clear("items"), store.clear("boxes"), store.clear("photos")]);
+    ls.del("sm.lastBox"); ls.del("sm.lastBackup");
+    S.items = []; S.boxes = [];
+    reindex(); renderAll(); closeSheet(); toast("Everything was deleted from this phone");
+  } catch (e) { toast(storeErrCopy(e)); }
+}
+async function testKey(btn) {
+  btn.disabled = true; const old = btn.textContent; btn.textContent = "Testing…";
+  try { await askClaude({ text: "Reply with the single word OK.", maxTokens: 400 }); toast("Your key works"); }
+  catch (e) { toast(e && e.code === "invalid_json" ? "Your key works" : aiCopy(e).split(". ")[0] + "."); }
+  finally { if (btn.isConnected) { btn.disabled = false; btn.textContent = old; } }
+}
+
+/* ---------- tabs + toast ---------- */
+function setTab(t, quiet) {
+  S.tab = t;
+  for (const v of ["scan", "log", "boxes"]) $("#view-" + v).hidden = v !== t;
+  $$(".tab").forEach(b => b.setAttribute("aria-current", b.dataset.tab === t ? "page" : "false"));
+  if (t !== "scan" && cam.stream) stopCamera(true);
+  else if (t === "scan" && cam.wanted && !cam.stream && !S.sheet) startCamera();
+  renderAll();
+  if (!quiet) window.scrollTo(0, 0);
+}
+let toastT = null;
+function toast(msg) {
+  const t = $("#toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("show"), 3400);
+}
+setInterval(() => {
+  for (const el of document.querySelectorAll(".tick[data-start]")) el.textContent = Math.max(0, Math.round((Date.now() - Number(el.dataset.start)) / 1000)) + "s";
+}, 1000);
+
+/* ---------- events ---------- */
+let qT = null;
+const dupT = {};
+function takeFile(input, fn) { const f = input.files && input.files[0]; input.value = ""; if (f) fn(f); }
+function onClick(e) {
+  const el = e.target.closest("[data-act]"); if (!el) return;
+  const act = el.dataset.act, id = el.dataset.id;
+  switch (act) {
+    case "tab": setTab(el.dataset.tab); break;
+    case "settings": openSettings(); break;
+    case "cam-start": startCamera(); break;
+    case "cam-stop": stopCamera(); break;
+    case "cam-snap": snap(); break;
+    case "cam-flip": flipCamera(); break;
+    case "cam-torch": toggleTorch(); break;
+    case "pick-camera": $("#cam").click(); break;
+    case "pick-library": $("#lib").click(); break;
+    case "manual": startReview(null); break;
+    case "close-sheet": closeSheet(); break;
+    case "stop-id": if (R && R.ctl) R.ctl.abort(); break;
+    case "recheck": if (R) identify(R, true); break;
+    case "retry-id": if (R) identify(R, careful()); break;
+    case "use-alt": { const input = $("#c" + el.dataset.i + "-name"); if (input) { input.value = el.dataset.alt; refreshDupes(el.dataset.i); } break; }
+    case "categorize": categorize(el.dataset.i, el); break;
+    case "box-pick": if (R) { R.boxTouched = true; R.boxChoice = { kind: "box", id }; renderReviewBox(); } break;
+    case "box-new": if (R) { R.boxTouched = true; R.boxChoice = { kind: "new" }; renderReviewBox(); } break;
+    case "box-none": if (R) { R.boxTouched = true; R.boxChoice = { kind: "none" }; renderReviewBox(); } break;
+    case "save-review": saveReview(); break;
+    case "open-item": {
+      const sh = S.sheet;
+      const back = sh && sh.type === "box" && boxMap.get(sh.id) ? { type: "box", id: sh.id, label: boxMap.get(sh.id).label } : sh && sh.type === "loose" ? { type: "loose", id: "", label: "Loose" } : null;
+      openItem(id, back); break;
+    }
+    case "save-item": saveItem(id); break;
+    case "del-item": delItem(id, el); break;
+    case "item-photo": { const inp = $("#itemphoto"); inp.dataset.id = id; inp.click(); break; }
+    case "open-box": openBox(id); break;
+    case "open-loose": openLoose(); break;
+    case "new-box": openNewBox(); break;
+    case "create-box": createBox(); break;
+    case "save-box": updateBox(id); break;
+    case "del-box": delBox(id, el); break;
+    case "copy-list": copyList(); break;
+    case "cat": S.cat = el.dataset.cat; S.limit = 150; renderLog(); break;
+    case "more": S.limit += 150; renderLog(); break;
+    case "match-photo":
+      if (!S.items.length) toast("Log a few items first, then match a photo against them.");
+      else if (!aiOn()) toast("Add your Claude API key in Settings to match photos.");
+      else $("#matchfile").click();
+      break;
+    case "match-stop": if (S.match && S.match.ctl) S.match.ctl.abort(); break;
+    case "match-clear": clearMatch(); break;
+    case "export-csv": exportCsv(); break;
+    case "backup": makeBackup(el); break;
+    case "restore": $("#restorefile").click(); break;
+    case "save-pending": if (pendingFile) { const p = pendingFile; pendingFile = null; renderSettingsBackup(); deliver(p.file, p.onDone); } break;
+    case "wipe": wipeAll(el); break;
+    case "key-save": {
+      const v = ($("#set-key").value || "").trim();
+      if (!v) { toast("Paste your key first."); break; }
+      if (!/^sk-ant-/.test(v)) { toast("That doesn't look like a Claude API key. Keys start with sk-ant-."); break; }
+      ls.set("sm.apiKey", v); toast("Key saved on this phone"); openSettings(); renderAll(); break;
+    }
+    case "key-test": testKey(el); break;
+    case "key-remove": if (armed(el, "Tap again to remove")) { ls.del("sm.apiKey"); toast("Key removed"); openSettings(); renderAll(); } break;
+    case "models-save": {
+      const f = ($("#set-fast").value || "").trim(), c = ($("#set-careful").value || "").trim();
+      if (f) ls.set("sm.modelFast", f); else ls.del("sm.modelFast");
+      if (c) ls.set("sm.modelCareful", c); else ls.del("sm.modelCareful");
+      toast("Models saved"); break;
+    }
+    case "models-reset": ls.del("sm.modelFast"); ls.del("sm.modelCareful"); $("#set-fast").value = DEFAULT_MODELS.fast; $("#set-careful").value = DEFAULT_MODELS.careful; toast("Models reset"); break;
+  }
+}
+function onChange(e) {
+  const t = e.target;
+  if (t.id === "careful") { ls.set("sm.careful", t.checked ? "1" : "0"); return; }
+  if (!R) return;
+  if (t.classList.contains("keep")) { const card = t.closest(".card"); if (card) card.classList.toggle("off", !t.checked); renderReviewFoot(); renderReviewBox(); }
+  else if (t.classList.contains("cat") && t.closest("#review-cards")) renderReviewBox();
+}
+function onInput(e) {
+  const t = e.target;
+  if (t.id === "q") { clearTimeout(qT); qT = setTimeout(() => { S.query = t.value; S.limit = 150; renderLog(); }, 120); return; }
+  if (t.id === "box-label") { const h = $("#bh-label"); if (h) h.textContent = t.value || "Box"; return; }
+  if (t.id === "box-place") { const h = $("#bh-place"); if (h) h.textContent = t.value || "No place set"; return; }
+  if (!R) return;
+  if (t.id === "nb-label") { R.newBox.label = t.value; R.newBox.edited = true; }
+  else if (t.id === "nb-place") R.newBox.place = t.value;
+  else if (t.classList.contains("name") && t.dataset.i != null) { const i = t.dataset.i; clearTimeout(dupT[i]); dupT[i] = setTimeout(() => refreshDupes(i), 250); }
+}
+function boot() {
+  document.addEventListener("click", onClick);
+  document.addEventListener("change", onChange);
+  document.addEventListener("input", onInput);
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && S.sheet) closeSheet(); });
+  document.addEventListener("error", e => { const t = e.target; if (t && t.tagName === "IMG" && t.dataset && t.dataset.ph) t.hidden = true; }, true);
+  $("#cam").addEventListener("change", e => takeFile(e.target, startReview));
+  $("#lib").addEventListener("change", e => takeFile(e.target, startReview));
+  $("#matchfile").addEventListener("change", e => takeFile(e.target, startMatch));
+  $("#itemphoto").addEventListener("change", e => { const id = e.target.dataset.id; takeFile(e.target, f => addItemPhoto(id, f)); });
+  $("#restorefile").addEventListener("change", e => takeFile(e.target, restoreBackup));
+  $("#careful").checked = ls.get("sm.careful", "0") === "1";
+  renderCam();
+  const h = (location.hash || "").slice(1);
+  if (h === "log" || h === "boxes") setTab(h, true); else renderAll();
+  loadAll();
+  if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
+}
+boot();
+})();
+</script>
+</body>
+</html>
