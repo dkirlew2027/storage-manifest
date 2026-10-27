@@ -1,6 +1,6 @@
 // Storage Manifest service worker: lets the app open with no signal (your log lives on the phone).
 // Pages load network-first so updates show up right away; static files and fonts come from cache.
-const CACHE = "storage-manifest-v1";
+const CACHE = "storage-manifest-v2";
 const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icons/icon-180.png", "./icons/icon-192.png", "./icons/icon-512.png"];
 
 self.addEventListener("install", event => {
@@ -24,6 +24,9 @@ self.addEventListener("fetch", event => {
   if (url.hostname === "api.anthropic.com") return;
 
   if (req.mode === "navigate") {
+    // Only the app's own page is cached. Other pages hosted here (like orchard-visit/) go straight to the network.
+    const appRoot = new URL("./", self.location).pathname;
+    if (url.pathname !== appRoot && url.pathname !== appRoot + "index.html") return;
     event.respondWith(
       fetch(req)
         .then(res => {
