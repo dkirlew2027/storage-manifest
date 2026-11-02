@@ -44,7 +44,7 @@ Identification uses `claude-haiku-5-5` by default, which costs a fraction of a c
 
 | Folder | Purpose |
 | --- | --- |
-| `casket-poll/` | Family poll of the eight Jessup casket finishes at Haven Funeral Services. Live at https://dkirlew2027.github.io/storage-manifest/casket-poll/. Votes arrive by chat; `casket-poll/votes.json` holds the running tally shown on the page (`{"updated": "Nov 2", "votes": [{"name": "David", "option": 5}]}`). |
+| `casket-poll/` | Family poll of the eight Jessup casket finishes at Haven Funeral Services. Live at https://dkirlew2027.github.io/storage-manifest/casket-poll/. Votes are stored in a free Pantry basket (getpantry.cloud; the pantry ID is in `casket-poll/index.html`), one entry per voter keyed by name, and the page refreshes the tally about once a minute. Pantry allows about 2 API calls per second and removes baskets after 30 days without activity. |
 
 ## Run it locally
 
