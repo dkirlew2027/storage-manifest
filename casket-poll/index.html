@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>A casket for Grandma: the Jessup choices</title>
+<meta name="description" content="Family poll: the eight Jessup casket finishes offered by Haven Funeral Services.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f7f3ee;
+    --card: #ffffff;
+    --ink: #2b2925;
+    --ink-2: #5f5a52;
+    --ink-3: #8a8378;
+    --line: #e6dfd4;
+    --accent: #8d7247;
+    --accent-ink: #6f5934;
+    --accent-soft: #f1e9dc;
+    --bar: #b89968;
+    --shadow: 0 1px 2px rgba(43,41,37,.06), 0 8px 24px rgba(43,41,37,.06);
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Source Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 17px;
+    line-height: 1.5;
+    padding-bottom: 140px;
+  }
+  h1, h2 { font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif; font-weight: 600; margin: 0; letter-spacing: .005em; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 16px; }
+
+  header { padding: 36px 0 18px; text-align: center; }
+  .eyebrow { color: var(--accent-ink); font-size: 13px; letter-spacing: .14em; text-transform: uppercase; font-weight: 600; margin-bottom: 10px; }
+  h1 { font-size: clamp(34px, 7vw, 52px); line-height: 1.08; }
+  .lede { color: var(--ink-2); max-width: 620px; margin: 14px auto 0; font-size: 17px; }
+  .lede strong { color: var(--ink); font-weight: 600; }
+  .specs { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 18px auto 0; padding: 0; list-style: none; }
+  .specs li { background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; font-size: 14px; color: var(--ink-2); }
+
+  .how { max-width: 620px; margin: 22px auto 0; background: var(--accent-soft); border-radius: var(--radius); padding: 14px 16px; font-size: 15px; color: var(--accent-ink); text-align: left; }
+  .how ol { margin: 6px 0 0; padding-left: 20px; }
+  .how li { margin: 2px 0; }
+
+  .grid { display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 26px; }
+  @media (min-width: 560px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 980px) { .grid { grid-template-columns: repeat(4, 1fr); gap: 18px; } }
+
+  .card {
+    background: var(--card);
+    border: 2px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    display: flex; flex-direction: column;
+    transition: border-color .15s ease, transform .15s ease;
+    position: relative;
+  }
+  .card.selected { border-color: var(--accent); }
+  .card .num {
+    position: absolute; top: 10px; left: 10px; z-index: 2;
+    width: 30px; height: 30px; border-radius: 999px;
+    background: rgba(43,41,37,.78); color: #fff; font-weight: 600; font-size: 14px;
+    display: grid; place-items: center;
+  }
+  .card .check {
+    position: absolute; top: 10px; right: 10px; z-index: 2; display: none;
+    background: var(--accent); color: #fff; border-radius: 999px; padding: 4px 10px; font-size: 13px; font-weight: 600;
+  }
+  .card.selected .check { display: block; }
+  .photo {
+    display: block; width: 100%; border: 0; padding: 0; margin: 0; background: #fff; cursor: zoom-in;
+    aspect-ratio: 800 / 508;
+  }
+  .photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .photo:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
+  .body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+  .name { font-family: "Cormorant Garamond", Georgia, serif; font-size: 24px; font-weight: 600; line-height: 1.15; }
+  .meta { color: var(--ink-2); font-size: 14.5px; line-height: 1.4; }
+  .code { color: var(--ink-3); font-size: 12.5px; letter-spacing: .02em; }
+  .choose {
+    margin-top: auto; padding-top: 6px;
+  }
+  .choose button {
+    width: 100%; padding: 12px 14px; border-radius: 10px; border: 1.5px solid var(--accent); background: #fff; color: var(--accent-ink);
+    font: inherit; font-weight: 600; font-size: 16px; cursor: pointer;
+  }
+  .choose button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+  .choose button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .votes-under { font-size: 13.5px; color: var(--ink-3); min-height: 1.2em; }
+  .votes-under b { color: var(--accent-ink); font-weight: 600; }
+
+  /* tally */
+  .tally { margin-top: 40px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px 18px; box-shadow: var(--shadow); }
+  .tally h2 { font-size: 30px; }
+  .tally .sub { color: var(--ink-2); font-size: 15px; margin-top: 4px; }
+  .rows { margin-top: 16px; display: grid; gap: 12px; }
+  .row { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: end; }
+  .row .label { font-weight: 600; font-size: 16px; }
+  .row .count { color: var(--ink-2); font-size: 15px; font-variant-numeric: tabular-nums; }
+  .row .track { grid-column: 1 / -1; height: 10px; background: var(--accent-soft); border-radius: 4px; overflow: hidden; }
+  .row .fill { height: 100%; width: 0; background: var(--bar); border-radius: 4px; transition: width .4s ease; }
+  .row .names { grid-column: 1 / -1; color: var(--ink-3); font-size: 14px; }
+  .empty { color: var(--ink-2); margin-top: 12px; }
+
+  footer { margin-top: 30px; color: var(--ink-3); font-size: 13.5px; text-align: center; line-height: 1.6; }
+  footer a { color: var(--accent-ink); }
+
+  /* sticky vote bar */
+  .bar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+    background: rgba(255,255,255,.96); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    border-top: 1px solid var(--line); box-shadow: 0 -8px 24px rgba(43,41,37,.08);
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+    transform: translateY(110%); transition: transform .2s ease;
+  }
+  .bar.show { transform: translateY(0); }
+  .bar .inner { max-width: 720px; margin: 0 auto; display: grid; gap: 8px; }
+  .bar .pick { font-size: 15px; color: var(--ink-2); }
+  .bar .pick b { color: var(--ink); font-weight: 600; }
+  .bar .controls { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+  .bar input {
+    width: 100%; padding: 12px 12px; border: 1.5px solid var(--line); border-radius: 10px; font: inherit; font-size: 16px; background: #fff; color: var(--ink);
+  }
+  .bar input:focus { outline: none; border-color: var(--accent); }
+  .bar .go {
+    padding: 12px 16px; border-radius: 10px; border: 0; background: var(--accent); color: #fff; font: inherit; font-weight: 600; font-size: 16px; cursor: pointer; white-space: nowrap;
+  }
+  .bar .go:disabled { opacity: .5; cursor: default; }
+  .bar .status { font-size: 14px; color: var(--accent-ink); min-height: 1.2em; }
+  .bar textarea { width: 100%; font: inherit; font-size: 15px; padding: 10px; border: 1.5px solid var(--line); border-radius: 10px; resize: none; display: none; }
+  .bar textarea.show { display: block; }
+
+  /* lightbox */
+  .lb { position: fixed; inset: 0; z-index: 50; background: #141210; display: none; flex-direction: column; color: #fff; touch-action: pan-y; }
+  .lb.open { display: flex; }
+  .lb .top { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; padding-top: calc(12px + env(safe-area-inset-top)); font-size: 15px; }
+  .lb .top .t { font-family: "Cormorant Garamond", Georgia, serif; font-size: 22px; font-weight: 600; }
+  .lb .close { background: rgba(255,255,255,.12); border: 0; color: #fff; font: inherit; font-size: 15px; padding: 8px 14px; border-radius: 999px; cursor: pointer; }
+  .lb .stage { flex: 1; display: grid; place-items: center; padding: 8px; min-height: 0; }
+  .lb .stage img { max-width: 100%; max-height: 100%; width: auto; height: auto; border-radius: 10px; background: #fff; }
+  .lb .nav { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; padding: 10px 14px 10px; align-items: center; }
+  .lb .nav button { background: rgba(255,255,255,.12); border: 0; color: #fff; font: inherit; font-size: 15px; padding: 12px; border-radius: 10px; cursor: pointer; }
+  .lb .meta { text-align: center; font-size: 14px; color: rgba(255,255,255,.8); padding: 0 14px calc(14px + env(safe-area-inset-bottom)); }
+  .lb .nav .choose-lb { background: var(--accent); }
+
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Haven Funeral Services · Jessup line</div>
+    <h1>A casket for Grandma</h1>
+    <p class="lede">These are the eight Jessup finishes Haven offers. <strong>It is the same casket in every color</strong>: same steel, same construction, same crepe interior style, and the same price. The only decision is the color and the hardware.</p>
+    <ul class="specs" aria-label="Shared details">
+      <li>20-gauge steel</li>
+      <li>Gasketed (sealed lid)</li>
+      <li>83.75 in long, 28.75 in wide</li>
+      <li>$2,875 each</li>
+    </ul>
+    <div class="how">
+      <strong>How to vote</strong>
+      <ol>
+        <li>Tap a photo to see it bigger. Swipe or use the arrows to compare.</li>
+        <li>Tap <em>Choose this one</em> under your favorite.</li>
+        <li>Type your name and tap <em>Copy my vote</em>, then paste it in the family chat.</li>
+      </ol>
+    </div>
+  </header>
+
+  <section class="grid" id="grid" aria-label="The eight Jessup finishes"></section>
+
+  <section class="tally" id="tally" aria-live="polite">
+    <h2>Family votes so far</h2>
+    <div class="sub" id="tally-sub">Loading the tally…</div>
+    <div class="rows" id="rows"></div>
+  </section>
+
+  <footer>
+    Photos, finishes and prices are from the Haven Funeral Services family catalog (Matthews Aurora).<br>
+    <a href="https://catalog.matthewsaurora.com/Family/f3c7d7f0-659a-4ac4-9622-22054da6e644" target="_blank" rel="noopener">Open the full Haven catalog</a>
+  </footer>
+</div>
+
+<div class="bar" id="bar" role="region" aria-label="Your vote">
+  <div class="inner">
+    <div class="pick">Your pick: <b id="pick-name">none yet</b></div>
+    <div class="controls">
+      <label class="sr-only" for="voter">Your name</label>
+      <input id="voter" type="text" placeholder="Your name" autocomplete="name" enterkeyhint="done">
+      <button class="go" id="copy" type="button">Copy my vote</button>
+    </div>
+    <div class="status" id="status"></div>
+    <textarea id="fallback" rows="2" readonly aria-label="Your vote text"></textarea>
+  </div>
+</div>
+
+<div class="lb" id="lb" role="dialog" aria-modal="true" aria-label="Larger photo">
+  <div class="top">
+    <div class="t" id="lb-title"></div>
+    <button class="close" id="lb-close" type="button">Close</button>
+  </div>
+  <div class="stage"><img id="lb-img" alt=""></div>
+  <div class="nav">
+    <button type="button" id="lb-prev">‹ Previous</button>
+    <button type="button" class="choose-lb" id="lb-choose">Choose this one</button>
+    <button type="button" id="lb-next">Next ›</button>
+  </div>
+  <div class="meta" id="lb-meta"></div>
+</div>
+
+<script>
+(function () {
+  const OPTIONS = [
+    { n: 1, name: 'Copper / Ebony',          finish: 'Copper, shaded ebony',          interior: 'Rosetone crepe', hardware: 'copper-tone', code: '71065175', img: 'photos/1-copper-ebony.webp' },
+    { n: 2, name: 'Silver / Dark Gunmetal',  finish: 'Silver, shaded dark gunmetal',  interior: 'White crepe',    hardware: 'silver-tone', code: '71065172', img: 'photos/2-silver-dark-gunmetal.webp' },
+    { n: 3, name: 'Almond / Gold',           finish: 'Almond, shaded gold',           interior: 'Rosetone crepe', hardware: 'gold-tone',   code: '71083086', img: 'photos/3-almond-gold.webp' },
+    { n: 4, name: 'Wineberry / Silver',      finish: 'Wineberry, shaded silver',      interior: 'Silver crepe',   hardware: 'silver-tone', code: '71083030', img: 'photos/4-wineberry-silver.webp' },
+    { n: 5, name: 'Spruce Blue / Silver',    finish: 'Spruce blue, shaded silver',    interior: 'White crepe',    hardware: 'silver-tone', code: '71083033', img: 'photos/5-spruce-blue-silver.webp' },
+    { n: 6, name: 'Russet Bronze / Copper',  finish: 'Russet bronze, shaded copper',  interior: 'Rosetone crepe', hardware: 'copper-tone', code: '71083029', img: 'photos/6-russet-bronze-copper.webp' },
+    { n: 7, name: 'White / Gold',            finish: 'White, shaded gold',            interior: 'White crepe',    hardware: 'gold-tone',   code: '71065173', img: 'photos/7-white-gold.webp' },
+    { n: 8, name: 'Ebony / Gold',            finish: 'Ebony, shaded gold',            interior: 'White crepe',    hardware: 'gold-tone',   code: '71065174', img: 'photos/8-ebony-gold.webp' },
+  ];
+
+  const $ = (id) => document.getElementById(id);
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+  };
+
+  let selected = Number(store.get('casket-pick')) || 0;
+  let lbIndex = 0;
+  let votes = [];
+
+  // ----- cards -----
+  const grid = $('grid');
+  OPTIONS.forEach((o, i) => {
+    const card = document.createElement('article');
+    card.className = 'card';
+    card.id = 'opt-' + o.n;
+    card.innerHTML = `
+      <span class="num" aria-hidden="true">${o.n}</span>
+      <span class="check">Your pick</span>
+      <button class="photo" type="button" aria-label="See ${o.name} larger">
+        <img src="${o.img}" alt="Jessup casket in ${o.name}, lid open, ${o.interior.toLowerCase()} interior" loading="${i < 2 ? 'eager' : 'lazy'}" width="800" height="508">
+      </button>
+      <div class="body">
+        <div class="name">${o.n}. ${o.name}</div>
+        <div class="meta">${o.finish} finish, ${o.interior.toLowerCase()} interior, ${o.hardware} hardware.</div>
+        <div class="code">Catalog #${o.code}</div>
+        <div class="votes-under" id="under-${o.n}"></div>
+        <div class="choose"><button type="button" aria-pressed="false" data-n="${o.n}">Choose this one</button></div>
+      </div>`;
+    card.querySelector('.photo').addEventListener('click', () => openLb(i));
+    card.querySelector('.choose button').addEventListener('click', () => choose(o.n));
+    grid.appendChild(card);
+  });
+
+  function choose(n) {
+    selected = (selected === n) ? 0 : n;
+    store.set('casket-pick', String(selected));
+    render();
+  }
+
+  function render() {
+    OPTIONS.forEach((o) => {
+      const card = $('opt-' + o.n);
+      const on = o.n === selected;
+      card.classList.toggle('selected', on);
+      const b = card.querySelector('.choose button');
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      b.textContent = on ? 'Chosen' : 'Choose this one';
+    });
+    const bar = $('bar');
+    const o = OPTIONS.find((x) => x.n === selected);
+    bar.classList.toggle('show', !!o);
+    $('pick-name').textContent = o ? `#${o.n} ${o.name}` : 'none yet';
+    $('status').textContent = '';
+    $('fallback').classList.remove('show');
+    if (lbOpen()) syncLb();
+  }
+
+  // ----- vote text / copy -----
+  const voter = $('voter');
+  voter.value = store.get('casket-voter') || '';
+  voter.addEventListener('input', () => store.set('casket-voter', voter.value));
+
+  function voteText() {
+    const o = OPTIONS.find((x) => x.n === selected);
+    const name = voter.value.trim() || 'Someone';
+    return `Casket vote from ${name}: #${o.n} Jessup ${o.name}`;
+  }
+
+  $('copy').addEventListener('click', async () => {
+    if (!selected) return;
+    if (!voter.value.trim()) { voter.focus(); $('status').textContent = 'Add your name first so we know who voted.'; return; }
+    const text = voteText();
+    const fb = $('fallback');
+    try {
+      await navigator.clipboard.writeText(text);
+      $('status').textContent = 'Copied. Now paste it in the family chat.';
+      fb.classList.remove('show');
+    } catch (e) {
+      fb.value = text; fb.classList.add('show'); fb.focus(); fb.select();
+      $('status').textContent = 'Copy the line below and paste it in the family chat.';
+    }
+  });
+
+  // ----- lightbox -----
+  const lb = $('lb');
+  function lbOpen() { return lb.classList.contains('open'); }
+  function openLb(i) { lbIndex = i; lb.classList.add('open'); document.body.style.overflow = 'hidden'; syncLb(); $('lb-close').focus(); }
+  function closeLb() { lb.classList.remove('open'); document.body.style.overflow = ''; }
+  function syncLb() {
+    const o = OPTIONS[lbIndex];
+    const img = $('lb-img');
+    img.src = o.img; img.alt = `Jessup casket in ${o.name}`;
+    $('lb-title').textContent = `${o.n}. ${o.name}`;
+    $('lb-meta').textContent = `${lbIndex + 1} of ${OPTIONS.length} · ${o.finish}, ${o.interior.toLowerCase()} interior`;
+    const on = o.n === selected;
+    $('lb-choose').textContent = on ? 'Chosen' : 'Choose this one';
+  }
+  $('lb-close').addEventListener('click', closeLb);
+  $('lb-prev').addEventListener('click', () => { lbIndex = (lbIndex + OPTIONS.length - 1) % OPTIONS.length; syncLb(); });
+  $('lb-next').addEventListener('click', () => { lbIndex = (lbIndex + 1) % OPTIONS.length; syncLb(); });
+  $('lb-choose').addEventListener('click', () => { choose(OPTIONS[lbIndex].n); });
+  lb.addEventListener('click', (e) => { if (e.target === lb || e.target.classList.contains('stage')) closeLb(); });
+  document.addEventListener('keydown', (e) => {
+    if (!lbOpen()) return;
+    if (e.key === 'Escape') closeLb();
+    if (e.key === 'ArrowLeft') $('lb-prev').click();
+    if (e.key === 'ArrowRight') $('lb-next').click();
+  });
+  let tx = null;
+  lb.addEventListener('touchstart', (e) => { tx = e.touches[0].clientX; }, { passive: true });
+  lb.addEventListener('touchend', (e) => {
+    if (tx === null) return;
+    const dx = e.changedTouches[0].clientX - tx; tx = null;
+    if (Math.abs(dx) > 50) (dx < 0 ? $('lb-next') : $('lb-prev')).click();
+  }, { passive: true });
+
+  // ----- tally (votes.json, kept up to date by David) -----
+  function renderTally() {
+    const rows = $('rows');
+    rows.innerHTML = '';
+    OPTIONS.forEach((o) => { $('under-' + o.n).textContent = ''; });
+    if (!votes.length) {
+      $('tally-sub').textContent = 'No votes in yet. Yours could be the first.';
+      return;
+    }
+    const byOpt = new Map(OPTIONS.map((o) => [o.n, []]));
+    votes.forEach((v) => { if (byOpt.has(v.option)) byOpt.get(v.option).push(v.name); });
+    const max = Math.max(...[...byOpt.values()].map((a) => a.length), 1);
+    const ordered = [...OPTIONS].sort((a, b) => byOpt.get(b.n).length - byOpt.get(a.n).length || a.n - b.n);
+    ordered.forEach((o) => {
+      const names = byOpt.get(o.n);
+      if (!names.length) return;
+      const row = document.createElement('div');
+      row.className = 'row';
+      row.innerHTML = `
+        <div class="label">${o.n}. ${o.name}</div>
+        <div class="count">${names.length} ${names.length === 1 ? 'vote' : 'votes'}</div>
+        <div class="track" aria-hidden="true"><div class="fill" style="width:${Math.round(100 * names.length / max)}%"></div></div>
+        <div class="names">${names.map(esc).join(', ')}</div>`;
+      rows.appendChild(row);
+      $('under-' + o.n).innerHTML = `<b>${names.length}</b> ${names.length === 1 ? 'vote' : 'votes'}: ${names.map(esc).join(', ')}`;
+    });
+    const total = votes.length;
+    $('tally-sub').textContent = `${total} ${total === 1 ? 'vote' : 'votes'} so far` + (tallyUpdated ? `, updated ${tallyUpdated}` : '') + '.';
+  }
+  function esc(s) { return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+  let tallyUpdated = '';
+  fetch('votes.json?v=' + Date.now(), { cache: 'no-store' })
+    .then((r) => r.ok ? r.json() : { votes: [] })
+    .then((data) => { votes = Array.isArray(data.votes) ? data.votes : []; tallyUpdated = data.updated || ''; renderTally(); })
+    .catch(() => { votes = []; renderTally(); });
+
+  render();
+})();
+</script>
+</body>
+</html>

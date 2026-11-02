@@ -40,6 +40,12 @@ Identification uses `claude-haiku-5-5` by default, which costs a fraction of a c
 | `icons/` | Home screen and browser icons |
 | `.nojekyll` | Tells GitHub Pages to serve files as they are |
 
+## Other pages hosted here
+
+| Folder | Purpose |
+| --- | --- |
+| `casket-poll/` | Family poll of the eight Jessup casket finishes at Haven Funeral Services. Live at https://dkirlew2027.github.io/storage-manifest/casket-poll/. Votes arrive by chat; `casket-poll/votes.json` holds the running tally shown on the page (`{"updated": "Nov 2", "votes": [{"name": "David", "option": 5}]}`). |
+
 ## Run it locally
 
 ```bash
