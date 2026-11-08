@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Service of Thanksgiving Program Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Great+Vibes&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --accent:#a8873a; --ink:#2b2622; --paper:#fffdf8; --soft:#f4ede0; --deep:#3b2f2a;
+  --ui:#1f2933; --uibg:#f3f4f6; --uiline:#d6d9de;
+}
+body.theme-jamaica{--accent:#0b7a3b; --ink:#141414; --paper:#fffef9; --soft:#fbf3cf; --deep:#141414;}
+body.theme-lavender{--accent:#7a5c9e; --ink:#2e2638; --paper:#fdfbff; --soft:#efe8f6; --deep:#3d2f52;}
+body.theme-navy{--accent:#b08d3c; --ink:#1b2333; --paper:#fdfdfb; --soft:#e9edf4; --deep:#1b2a4a;}
+body.theme-rose{--accent:#a5525f; --ink:#3a2a2c; --paper:#fffaf9; --soft:#f7e6e6; --deep:#5a2f36;}
+
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:Lato,system-ui,sans-serif;color:var(--ui);background:var(--uibg)}
+.app{display:grid;grid-template-columns:420px minmax(0,1fr);height:100vh}
+/* ---------- Editor ---------- */
+.editor{overflow:auto;background:#fff;border-right:1px solid var(--uiline);padding:0 0 80px}
+.toolbar{position:sticky;top:0;z-index:5;background:var(--deep);color:#fff;padding:12px 14px}
+.toolbar h1{font-size:16px;margin:0 0 8px;font-weight:700;letter-spacing:.3px}
+.toolbar .row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.btn{border:1px solid var(--uiline);background:#fff;color:var(--ui);border-radius:6px;padding:7px 10px;font-size:13px;cursor:pointer;font-family:inherit}
+.btn:hover{background:#f7f7f7}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.small{padding:3px 7px;font-size:12px}
+.btn.danger{color:#b42318}
+select.btn{padding:6px}
+.status{font-size:11px;opacity:.8;margin-top:6px}
+.help{font-size:13px;line-height:1.45;background:#fffbeb;border-bottom:1px solid #f3e3a5;padding:10px 14px;color:#5b4a12}
+details.sec{border-bottom:1px solid var(--uiline)}
+details.sec>summary{cursor:pointer;padding:12px 14px;font-weight:700;font-size:14px;list-style:none;display:flex;justify-content:space-between}
+details.sec>summary::after{content:"+";color:#888}
+details.sec[open]>summary::after{content:"\2212"}
+details.sec>summary .pg{font-weight:400;color:#888;font-size:12px}
+.sec-body{padding:2px 14px 14px}
+.field{margin:0 0 10px}
+.field label{display:block;font-size:12px;font-weight:700;margin:0 0 3px;color:#3e4752}
+.field .hint{font-weight:400;color:#7a828c}
+.field input[type=text],.field textarea{width:100%;border:1px solid var(--uiline);border-radius:6px;padding:7px 8px;font:14px Lato,sans-serif;color:var(--ui)}
+.field textarea{min-height:70px;resize:vertical}
+.field textarea.tall{min-height:200px}
+.imgbox{display:flex;gap:8px;align-items:center}
+.imgbox img{width:56px;height:56px;object-fit:cover;border-radius:6px;border:1px solid var(--uiline)}
+.imgbox .empty{width:56px;height:56px;border:1px dashed #bbb;border-radius:6px;display:grid;place-items:center;font-size:10px;color:#999}
+.list-item{border:1px solid var(--uiline);border-radius:8px;padding:8px;margin:0 0 8px;background:#fafafa}
+.list-item .grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.list-item .grid .full{grid-column:1/-1}
+.list-item input,.list-item textarea{width:100%;border:1px solid var(--uiline);border-radius:5px;padding:5px 7px;font:13px Lato,sans-serif}
+.list-item textarea{min-height:80px}
+.list-item .ctrls{display:flex;gap:4px;justify-content:flex-end;margin-top:6px}
+.list-item .mini{font-size:10px;color:#7a828c;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+/* ---------- Preview ---------- */
+.preview{overflow:auto;padding:24px 16px 80px}
+.pages{display:flex;flex-direction:column;align-items:center;gap:24px}
+.page-wrap{position:relative}
+.page-label{font-size:11px;color:#6b7280;margin:0 0 4px;text-transform:uppercase;letter-spacing:.6px}
+.page{width:8.5in;min-height:11in;background:var(--paper);color:var(--ink);box-shadow:0 2px 14px rgba(0,0,0,.12);
+  padding:.65in .7in;font-family:"Cormorant Garamond",Georgia,serif;font-size:15pt;line-height:1.35;position:relative;overflow:hidden}
+.page::before{content:"";position:absolute;inset:.28in;border:1.5px solid var(--accent);pointer-events:none;opacity:.7}
+.page::after{content:"";position:absolute;inset:.34in;border:.5px solid var(--accent);pointer-events:none;opacity:.5}
+.page h2{font-family:"Cormorant Garamond",serif;font-weight:700;text-align:center;color:var(--deep);font-size:26pt;margin:0 0 4px;letter-spacing:1px;text-transform:uppercase}
+.page h3{font-weight:700;color:var(--accent);font-size:15pt;margin:14px 0 4px;text-transform:uppercase;letter-spacing:1.5px;text-align:center}
+.flourish{text-align:center;color:var(--accent);font-size:16pt;margin:2px 0 14px;letter-spacing:6px}
+.script{font-family:"Great Vibes",cursive;font-weight:400}
+.ph{background:#fff3c4;color:#8a6d00;border-bottom:1px dashed #c9a400;padding:0 3px;border-radius:3px;font-style:italic}
+body.hide-ph .ph{background:none;border:none;color:transparent}
+/* cover */
+.cover{display:flex;flex-direction:column;align-items:center;text-align:center;padding-top:.75in}
+.cover .pre{text-transform:uppercase;letter-spacing:3px;font-size:13pt;color:var(--deep);font-weight:600}
+.cover .photo{width:3.6in;height:4.5in;border-radius:50%/50%;object-fit:cover;border:5px solid var(--paper);box-shadow:0 0 0 2px var(--accent);margin:22px 0 18px;background:var(--soft)}
+.cover .photo.empty,.photo-empty{display:grid;place-items:center;color:#8a8a8a;font-size:12pt;font-style:italic}
+.cover .name{font-size:44pt;line-height:1.05;color:var(--deep)}
+.cover .nick{font-size:15pt;font-style:italic;margin-top:6px}
+.cover .dates{display:flex;gap:40px;justify-content:center;margin:16px 0 8px;font-size:15pt}
+.cover .dates b{display:block;color:var(--accent);text-transform:uppercase;letter-spacing:2px;font-size:11pt}
+.cover .verse{font-style:italic;max-width:5.6in;margin:10px auto 0;font-size:14pt}
+.cover .svc{margin-top:auto;font-size:13pt;padding-top:20px;line-height:1.45}
+/* order of service */
+.officiants{display:grid;grid-template-columns:1fr 1fr;gap:2px 24px;font-size:12.5pt;margin:6px 0 10px;text-align:center}
+.officiants b{display:block;color:var(--accent);font-size:9.5pt;text-transform:uppercase;letter-spacing:1.5px}
+.oos{width:100%;border-collapse:collapse;font-size:13.5pt}
+.oos td{padding:3px 4px;vertical-align:top}
+.oos td.lbl{font-weight:700;white-space:nowrap;width:40%;color:var(--deep)}
+.oos td.det{font-style:italic}
+.oos td.by{text-align:right;width:34%}
+.oos tr.headrow td{padding-top:10px;text-align:center;color:var(--accent);text-transform:uppercase;letter-spacing:2px;font-weight:700;font-size:11.5pt}
+/* life sketch */
+.sketch p{margin:0 0 10px;text-align:justify}
+.sketch .float-photo{float:right;width:2.6in;height:3.2in;object-fit:cover;margin:4px 0 10px 18px;border:3px solid var(--paper);box-shadow:0 0 0 1.5px var(--accent);background:var(--soft)}
+.sketch .float-photo.photo-empty{display:grid}
+.dropcap::first-letter{float:left;font-size:46pt;line-height:.85;padding:4px 6px 0 0;color:var(--accent);font-weight:700}
+/* family */
+.two-col{columns:2;column-gap:.4in}
+.fam-group{break-inside:avoid;margin:0 0 10px}
+.fam-group b{display:block;color:var(--accent);text-transform:uppercase;letter-spacing:1.5px;font-size:10.5pt}
+.center{text-align:center}
+.small{font-size:12.5pt}
+/* gallery */
+.gallery{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.gallery figure{margin:0;text-align:center}
+.gallery img,.gallery .photo-empty{width:100%;height:2.7in;object-fit:cover;border:3px solid var(--paper);box-shadow:0 0 0 1.5px var(--accent);background:var(--soft)}
+.gallery figcaption{font-style:italic;font-size:12pt;margin-top:4px}
+.gallery.n1{grid-template-columns:1fr}.gallery.n1 img{height:7in}
+/* hymns */
+.hymns{columns:2;column-gap:.35in;font-size:12.5pt;line-height:1.3}
+.hymn{break-inside:avoid;margin:0 0 14px}
+.hymn .ht{font-weight:700;color:var(--deep);text-transform:uppercase;letter-spacing:1px;font-size:12pt;margin-bottom:3px}
+.hymn .hs{font-size:10.5pt;color:var(--accent);font-style:italic;margin-bottom:4px}
+.hymn .hb{white-space:pre-wrap}
+/* back */
+.back{display:flex;flex-direction:column;align-items:center;text-align:center}
+.back .bphoto{width:3.3in;height:3.3in;object-fit:cover;border-radius:50%;box-shadow:0 0 0 2px var(--accent);border:4px solid var(--paper);background:var(--soft);margin:10px 0}
+.back .ack{max-width:6in;font-size:14pt}
+.back .credit{margin-top:auto;font-size:11pt;opacity:.8;padding-top:16px}
+.boxed{border:1px solid var(--accent);padding:10px 14px;margin:12px auto;max-width:6in;background:color-mix(in srgb,var(--soft) 60%,transparent)}
+.mobile-tabs{display:none}
+
+@media (max-width:900px){
+  .app{grid-template-columns:minmax(0,1fr);height:auto}
+  .preview,.editor{min-width:0}
+  .editor,.preview{height:auto;overflow:visible}
+  .mobile-tabs{display:flex;position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid var(--uiline)}
+  .mobile-tabs button{flex:1;padding:12px;border:0;background:#fff;font:700 14px Lato,sans-serif;color:#555}
+  .mobile-tabs button.on{color:var(--accent);box-shadow:inset 0 -3px 0 var(--accent)}
+  body.view-edit .preview{display:none}
+  body.view-preview .editor{display:none}
+  .toolbar{position:static}
+  .preview{padding:12px 0 60px}
+}
+@media print{
+  @page{size:letter;margin:0}
+  body{background:#fff}
+  .editor,.mobile-tabs,.page-label{display:none!important}
+  .app{display:block;height:auto}
+  .preview{padding:0;overflow:visible;display:block!important}
+  .pages{gap:0;display:block;zoom:1!important}
+  .page{box-shadow:none;break-after:page;page-break-after:always;margin:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .ph{background:none!important;border:none!important}
+}
+</style>
+</head>
+<body class="theme-ivory view-edit">
+<div class="mobile-tabs">
+  <button id="tabEdit" class="on" onclick="setView('edit')">Fill in details</button>
+  <button id="tabPrev" onclick="setView('preview')">Preview program</button>
+</div>
+<div class="app">
+  <aside class="editor">
+    <div class="toolbar">
+      <h1>Service of Thanksgiving Program Builder</h1>
+      <div class="row">
+        <button class="btn primary" onclick="window.print()">Print / Save PDF</button>
+        <button class="btn" onclick="exportData()">Save file</button>
+        <button class="btn" onclick="document.getElementById('importFile').click()">Open file</button>
+        <input type="file" id="importFile" accept=".json,application/json" hidden onchange="importData(this)">
+        <select class="btn" id="themeSel" onchange="setTheme(this.value)" title="Color theme">
+          <option value="ivory">Ivory &amp; Gold</option>
+          <option value="navy">Navy &amp; Gold</option>
+          <option value="lavender">Lavender</option>
+          <option value="rose">Rose</option>
+          <option value="jamaica">Jamaica (Black, Green, Gold)</option>
+        </select>
+      </div>
+      <div class="status" id="status">Changes save automatically in this browser.</div>
+    </div>
+    <div class="help">
+      <b>How to use:</b> Open a section below and type in the boxes. Anything still in a
+      <span class="ph">[yellow box]</span> in the preview needs to be filled in.
+      To pass your work to another family member, tap <b>Save file</b> and send them the file.
+      They open this page and tap <b>Open file</b>. When it's final, tap <b>Print / Save PDF</b>
+      (Letter size, margins "None", turn on "Background graphics").
+    </div>
+    <div id="form"></div>
+    <div style="padding:14px">
+      <label style="font-size:13px"><input type="checkbox" id="hidePh" onchange="document.body.classList.toggle('hide-ph',this.checked)"> Hide unfilled placeholders (for a clean print)</label><br><br>
+      <button class="btn danger small" onclick="resetAll()">Start over (clears everything)</button>
+    </div>
+  </aside>
+  <main class="preview"><div class="pages" id="pages"></div></main>
+</div>
+
+<script>
+/* ======================= Default template ======================= */
+const DEFAULTS = {
+  theme:"ivory",
+  coverTitle:"A Service of Thanksgiving for the Life of",
+  fullName:"", nickname:"", birthDate:"", deathDate:"",
+  coverVerse:"\"I have fought a good fight, I have finished my course, I have kept the faith.\" 2 Timothy 4:7",
+  coverPhoto:"",
+  serviceDate:"Saturday, December 12, 2026", serviceTime:"", church:"", churchAddress:"",
+  officiating:"", moderator:"", musician:"", funeralHome:"", interment:"", intermentAddress:"",
+  order:[
+    {lbl:"Musical Prelude", det:"", by:""},
+    {lbl:"Processional", det:"Family", by:""},
+    {lbl:"Opening Sentences", det:"", by:""},
+    {lbl:"Prayer of Invocation", det:"", by:""},
+    {lbl:"Praise and Worship", det:"", by:""},
+    {lbl:"Opening Hymn", det:"", by:"Congregation"},
+    {lbl:"First Lesson", det:"Psalm 23", by:""},
+    {lbl:"Hymn", det:"", by:"Congregation"},
+    {lbl:"Second Lesson", det:"John 14:1-6", by:""},
+    {lbl:"Tribute", det:"On behalf of the family", by:""},
+    {lbl:"Selection", det:"", by:""},
+    {lbl:"Tribute", det:"On behalf of the church", by:""},
+    {lbl:"Selection", det:"", by:""},
+    {lbl:"Remembrance", det:"Reading of the life sketch", by:""},
+    {lbl:"Reading of Condolences", det:"", by:""},
+    {lbl:"Offertory Hymn", det:"", by:"Congregation"},
+    {lbl:"Sermon", det:"", by:""},
+    {lbl:"Prayer for the Bereaved Family", det:"", by:""},
+    {lbl:"Benediction", det:"", by:""},
+    {lbl:"Final Viewing", det:"", by:""},
+    {lbl:"Instructions", det:"", by:"Funeral Director"},
+    {lbl:"Recessional Hymn", det:"", by:"Congregation"}
+  ],
+  graveIntro:"Interment follows immediately after the service.",
+  graveside:[
+    {lbl:"Committal", det:"", by:""},
+    {lbl:"Prayer", det:"", by:""},
+    {lbl:"Hymn / Choruses", det:"", by:"Congregation"},
+    {lbl:"Laying of Flowers", det:"", by:"Family"},
+    {lbl:"Benediction", det:"", by:""}
+  ],
+  sketchTitle:"Life Sketch",
+  lifeSketch:"",
+  sketchPhoto:"",
+  familyIntro:"She leaves to cherish her memory:",
+  family:[
+    {grp:"Children", names:""},
+    {grp:"Grandchildren", names:""},
+    {grp:"Great-grandchildren", names:""},
+    {grp:"Siblings", names:""},
+    {grp:"Nieces, nephews, other relatives and friends", names:""}
+  ],
+  predeceased:"",
+  gallery:[ {img:"",cap:""},{img:"",cap:""},{img:"",cap:""},{img:"",cap:""} ],
+  galleryTitle:"Precious Memories",
+  hymns:[
+    {t:"The Lord's My Shepherd", s:"Opening Hymn", b:""},
+    {t:"", s:"Hymn", b:""},
+    {t:"", s:"Offertory Hymn", b:""},
+    {t:"", s:"Recessional Hymn", b:""}
+  ],
+  poemTitle:"", poemText:"", poemBy:"",
+  pallbearers:"", flowerBearers:"", ushers:"",
+  ackText:"The family of the late [Name] wishes to express sincere thanks and appreciation for every prayer, phone call, visit, card, floral tribute and act of kindness shown during our time of bereavement. May God richly bless you.",
+  ackFrom:"The Family",
+  repast:"", backVerse:"\"Precious in the sight of the LORD is the death of his saints.\" Psalm 116:15",
+  backPhoto:""
+};
+
+let data = structuredClone(DEFAULTS);
+
+/* ======================= Form schema ======================= */
+const SECTIONS = [
+  {title:"Cover", page:"Page 1", open:true, fields:[
+    ["coverTitle","Cover heading"],
+    ["fullName","Full name","e.g. Mrs. Ivy May Brown"],
+    ["nickname","Affectionately known as","optional, e.g. Mama Ivy, Granny"],
+    ["birthDate","Sunrise (date of birth)","e.g. March 3, 1932"],
+    ["deathDate","Sunset (date of passing)"],
+    ["coverVerse","Verse or quote on cover","",true],
+    ["coverPhoto","Cover photo","",false,"img"]
+  ]},
+  {title:"Service details", page:"Pages 1 & 2", fields:[
+    ["serviceDate","Date of service"],["serviceTime","Time","e.g. 11:00 a.m."],
+    ["church","Church name"],["churchAddress","Church address / district, parish"],
+    ["officiating","Officiating Minister"],["moderator","Moderator / Presiding"],
+    ["musician","Musician / Organist"],["funeralHome","Funeral home"],
+    ["interment","Interment (cemetery or family plot)"],["intermentAddress","Interment location"]
+  ]},
+  {title:"Order of Service", page:"Page 2", list:"order"},
+  {title:"Graveside / Committal", page:"Page 7", fields:[["graveIntro","Note above graveside order","",true]], list:"graveside"},
+  {title:"Life Sketch (Obituary)", page:"Page 3", fields:[
+    ["sketchTitle","Page heading","e.g. Life Sketch, Obituary, Reflections"],
+    ["lifeSketch","Her story","Leave a blank line between paragraphs. Where she was born (district and parish), her parents, school, church, work, marriage, children, migration, what she was known for.",true,"tall"],
+    ["sketchPhoto","Photo beside the story","",false,"img"]
+  ]},
+  {title:"Family", page:"Page 4", fields:[["familyIntro","Opening line","e.g. She leaves to cherish her memory / Left to mourn"]], list:"family",
+   after:[["predeceased","Predeceased by","optional, e.g. her husband, a son",true]]},
+  {title:"Photo Gallery", page:"Page 5", fields:[["galleryTitle","Gallery heading"]], list:"gallery"},
+  {title:"Hymns & Poem", page:"Page 6", list:"hymns",
+   after:[["poemTitle","Poem or tribute title","optional"],["poemText","Poem or tribute text","Use an original family poem or one you have permission to print",true],["poemBy","Written by","optional"]]},
+  {title:"Pallbearers & Helpers", page:"Page 7", fields:[
+    ["pallbearers","Pallbearers","one name per line",true],
+    ["flowerBearers","Flower bearers","one name per line",true],
+    ["ushers","Ushers","one name per line",true]
+  ]},
+  {title:"Back cover", page:"Page 8", fields:[
+    ["ackText","Acknowledgement","",true,"tall"],["ackFrom","Signed","e.g. The Brown Family"],
+    ["repast","Repast / gathering after","e.g. All are invited to the family home in ... after interment",true],
+    ["backVerse","Closing verse","",true],
+    ["backPhoto","Back cover photo","",false,"img"]
+  ]}
+];
+
+const LIST_DEF = {
+  order:{label:"service item", cols:[["lbl","Item"],["det","Detail (hymn, scripture)"],["by","Led by / name",true]], blank:{lbl:"",det:"",by:""}},
+  graveside:{label:"graveside item", cols:[["lbl","Item"],["det","Detail"],["by","Led by",true]], blank:{lbl:"",det:"",by:""}},
+  family:{label:"family group", cols:[["grp","Group (e.g. Children)"],["names","Names, one per line",true,"ta"]], blank:{grp:"",names:""}},
+  gallery:{label:"photo", cols:[["img","Photo",true,"img"],["cap","Caption",true]], blank:{img:"",cap:""}},
+  hymns:{label:"hymn or reading", cols:[["t","Title"],["s","Used for (e.g. Opening Hymn)"],["b","Words (one line per line, blank line between verses)",true,"ta"]], blank:{t:"",s:"",b:""}}
+};
+
+/* ======================= Helpers ======================= */
+const $ = s => document.querySelector(s);
+const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const ph = (v,label) => (v && String(v).trim()) ? esc(v) : `<span class="ph">[${esc(label)}]</span>`;
+const paras = (txt,label,cls="") => {
+  if(!txt||!txt.trim()) return `<p class="${cls}"><span class="ph">[${esc(label)}]</span></p>`;
+  return txt.trim().split(/\n\s*\n/).map((p,i)=>`<p class="${i===0?cls:""}">${esc(p).replace(/\n/g,"<br>")}</p>`).join("");
+};
+const lines = t => (t||"").split("\n").map(s=>s.trim()).filter(Boolean);
+const imgOr = (src,cls,label) => src ? `<img class="${cls}" src="${src}" alt="">` : `<div class="${cls} photo-empty">[${esc(label)}]</div>`;
+const firstName = () => (data.fullName||"").replace(/^(Mrs\.?|Miss|Ms\.?|Mother|Sister|Deaconess)\s+/i,"").split(" ")[0];
+
+/* ======================= Storage (IndexedDB, with fallback) ======================= */
+let db=null;
+function openDB(){return new Promise(res=>{try{const r=indexedDB.open("thanksgiving-program",1);
+  r.onupgradeneeded=()=>r.result.createObjectStore("kv");r.onsuccess=()=>{db=r.result;res()};r.onerror=()=>res();}catch(e){res()}})}
+function dbGet(){return new Promise(res=>{if(!db)return res(null);try{const q=db.transaction("kv").objectStore("kv").get("data");q.onsuccess=()=>res(q.result||null);q.onerror=()=>res(null)}catch(e){res(null)}})}
+let saveTimer=null;
+function save(){clearTimeout(saveTimer);saveTimer=setTimeout(()=>{
+  if(!db){$("#status").textContent="Auto-save is off in this browser. Use Save file to keep your work.";return}
+  try{const tx=db.transaction("kv","readwrite");tx.objectStore("kv").put(data,"data");
+    tx.oncomplete=()=>$("#status").textContent="Saved in this browser at "+new Date().toLocaleTimeString([], {hour:"numeric",minute:"2-digit"});
+    tx.onerror=()=>$("#status").textContent="Could not auto-save. Use Save file.";}catch(e){}
+},500)}
+
+/* ======================= Images ======================= */
+function readImage(file){return new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>{const im=new Image();
+  im.onload=()=>{const max=1600;let w=im.width,h=im.height;const k=Math.min(1,max/Math.max(w,h));w=Math.round(w*k);h=Math.round(h*k);
+    const c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(im,0,0,w,h);res(c.toDataURL("image/jpeg",.85))};
+  im.onerror=rej;im.src=fr.result};fr.onerror=rej;fr.readAsDataURL(file)})}
+
+/* ======================= Form rendering ======================= */
+function fieldHTML([key,label,hint,multi,kind],val,path){
+  const id=path;
+  if(kind==="img"){
+    return `<div class="field"><label>${esc(label)}</label><div class="imgbox">
+      ${val?`<img src="${val}" alt="">`:`<div class="empty">No photo</div>`}
+      <label class="btn small">Choose photo<input type="file" accept="image/*" hidden data-img="${id}"></label>
+      ${val?`<button class="btn small danger" data-clearimg="${id}">Remove</button>`:""}</div></div>`;
+  }
+  const h=hint?` <span class="hint">${esc(hint)}</span>`:"";
+  return `<div class="field"><label for="${id}">${esc(label)}${multi?"":h}</label>${multi?`<div class="hint" style="font-size:12px;color:#7a828c;margin-bottom:3px">${esc(hint||"")}</div>`:""}
+    ${multi?`<textarea id="${id}" data-path="${id}" class="${kind==="tall"?"tall":""}">${esc(val)}</textarea>`
+           :`<input type="text" id="${id}" data-path="${id}" value="${esc(val)}">`}</div>`;
+}
+function listHTML(key){
+  const def=LIST_DEF[key];
+  const items=data[key].map((it,i)=>{
+    const cells=def.cols.map(([k,label,full,kind])=>{
+      const p=`${key}.${i}.${k}`;
+      if(kind==="img") return `<div class="full imgbox">${it[k]?`<img src="${it[k]}" alt="">`:`<div class="empty">No photo</div>`}
+        <label class="btn small">Choose photo<input type="file" accept="image/*" hidden data-img="${p}"></label>
+        ${it[k]?`<button class="btn small danger" data-clearimg="${p}">Remove</button>`:""}</div>`;
+      if(kind==="ta") return `<div class="${full?"full":""}"><div class="mini">${esc(label)}</div><textarea data-path="${p}">${esc(it[k])}</textarea></div>`;
+      return `<div class="${full?"full":""}"><div class="mini">${esc(label)}</div><input type="text" data-path="${p}" value="${esc(it[k])}"></div>`;
+    }).join("");
+    return `<div class="list-item"><div class="grid">${cells}</div><div class="ctrls">
+      <button class="btn small" data-move="${key}.${i}.-1" title="Move up">&uarr;</button>
+      <button class="btn small" data-move="${key}.${i}.1" title="Move down">&darr;</button>
+      <button class="btn small" data-dup="${key}.${i}">Copy</button>
+      <button class="btn small danger" data-del="${key}.${i}">Remove</button></div></div>`;
+  }).join("");
+  return items+`<button class="btn small" data-add="${key}">+ Add ${def.label}</button>`;
+}
+let openState={};
+function renderForm(){
+  document.querySelectorAll("details.sec").forEach((d,i)=>openState[i]=d.open);
+  $("#form").innerHTML=SECTIONS.map((s,i)=>{
+    const open = (i in openState)? openState[i] : !!s.open;
+    let body=(s.fields||[]).map(f=>fieldHTML(f,data[f[0]],f[0])).join("");
+    if(s.list) body+=listHTML(s.list);
+    if(s.after) body+=`<div style="margin-top:12px"></div>`+s.after.map(f=>fieldHTML(f,data[f[0]],f[0])).join("");
+    return `<details class="sec" ${open?"open":""}><summary><span>${esc(s.title)}</span><span class="pg">${s.page}</span></summary><div class="sec-body">${body}</div></details>`;
+  }).join("");
+}
+function setPath(path,val){const p=path.split(".");if(p.length===1)data[p[0]]=val;else data[p[0]][+p[1]][p[2]]=val}
+
+$("#form").addEventListener("input",e=>{const p=e.target.dataset.path;if(!p)return;setPath(p,e.target.value);renderPreview();save()});
+$("#form").addEventListener("change",async e=>{
+  const p=e.target.dataset.img;if(!p||!e.target.files[0])return;
+  $("#status").textContent="Adding photo...";
+  try{setPath(p,await readImage(e.target.files[0]));}catch(err){alert("Sorry, that photo could not be read. Try a JPG or PNG.")}
+  renderForm();renderPreview();save();
+});
+$("#form").addEventListener("click",e=>{
+  const t=e.target.closest("button");if(!t)return;
+  const d=t.dataset;
+  if(d.clearimg){setPath(d.clearimg,"")}
+  else if(d.add){data[d.add].push(structuredClone(LIST_DEF[d.add].blank))}
+  else if(d.del){const[k,i]=d.del.split(".");if(!confirm("Remove this item?"))return;data[k].splice(+i,1)}
+  else if(d.dup){const[k,i]=d.dup.split(".");data[k].splice(+i+1,0,structuredClone(data[k][+i]))}
+  else if(d.move){const[k,i,dir]=d.move.split(".");const a=+i,b=a+ +dir;if(b<0||b>=data[k].length)return;[data[k][a],data[k][b]]=[data[k][b],data[k][a]]}
+  else return;
+  e.preventDefault();renderForm();renderPreview();save();
+});
+
+/* ======================= Preview ======================= */
+function orderRows(items){
+  return items.map(it=>`<tr><td class="lbl">${ph(it.lbl,"Item")}</td><td class="det">${esc(it.det)}</td><td class="by">${ph(it.by,"Name")}</td></tr>`).join("");
+}
+function nameList(t,label){const l=lines(t);return l.length?l.map(esc).join("<br>"):`<span class="ph">[${esc(label)}]</span>`}
+function page(label,inner,cls=""){return `<div class="page-wrap"><div class="page-label">${label}</div><div class="page ${cls}">${inner}</div></div>`}
+
+function renderPreview(){
+  const d=data, nm=ph(d.fullName,"Her full name");
+  const P=[];
+  // 1 Cover
+  P.push(page("Page 1 · Front cover",`<div class="cover">
+    <div class="pre">${ph(d.coverTitle,"Cover heading")}</div>
+    ${d.coverPhoto?`<img class="photo" src="${d.coverPhoto}" alt="">`:`<div class="photo empty">[Cover photo]</div>`}
+    <div class="name script">${nm}</div>
+    ${d.nickname?`<div class="nick">Affectionately known as "${esc(d.nickname)}"</div>`:`<div class="nick"><span class="ph">[Affectionately known as, optional]</span></div>`}
+    <div class="dates"><div><b>Sunrise</b>${ph(d.birthDate,"Date of birth")}</div><div><b>Sunset</b>${ph(d.deathDate,"Date of passing")}</div></div>
+    <div class="verse">${ph(d.coverVerse,"Verse")}</div>
+    <div class="svc">${ph(d.serviceDate,"Date")} at ${ph(d.serviceTime,"Time")}<br>
+      <b>${ph(d.church,"Church name")}</b><br>${ph(d.churchAddress,"Church address")}</div>
+  </div>`));
+  // 2 Order of service
+  P.push(page("Page 2 · Order of Service",`<h2>Order of Service</h2><div class="flourish">&#10022; &#10022; &#10022;</div>
+    <div class="officiants">
+      <div><b>Officiating Minister</b>${ph(d.officiating,"Name")}</div>
+      <div><b>Moderator</b>${ph(d.moderator,"Name")}</div>
+      <div><b>Musician</b>${ph(d.musician,"Name")}</div>
+      <div><b>Interment</b>${ph(d.interment,"Cemetery")}</div>
+    </div>
+    <table class="oos">${orderRows(d.order)}</table>`));
+  // 3 Life sketch
+  const ln = `${ph(d.birthDate,"Sunrise")} &nbsp;&#10022;&nbsp; ${ph(d.deathDate,"Sunset")}`;
+  P.push(page("Page 3 · Life Sketch",`<h2>${ph(d.sketchTitle,"Life Sketch")}</h2>
+    <div class="center small" style="margin-bottom:12px">${nm}<br>${ln}</div>
+    <div class="sketch">${imgOr(d.sketchPhoto,"float-photo","Photo")}${paras(d.lifeSketch,"Her life story: birthplace (district, parish), parents, school, faith and church, work, marriage, children, migration, what she loved and what she was known for","dropcap")}</div>`));
+  // 4 Family
+  const fam=d.family.map(g=>`<div class="fam-group"><b>${ph(g.grp,"Group")}</b>${nameList(g.names,"Names")}</div>`).join("");
+  P.push(page("Page 4 · Family",`<h2>Treasured Memories</h2><div class="flourish">&#10022; &#10022; &#10022;</div>
+    <p class="center" style="font-style:italic;margin-top:0">${ph(d.familyIntro,"Opening line")}</p>
+    <div class="two-col">${fam}</div>
+    ${d.predeceased?`<h3>Predeceased by</h3><p class="center">${esc(d.predeceased).replace(/\n/g,"<br>")}</p>`:""}`));
+  // 5 Gallery
+  const g=d.gallery.length?d.gallery:[{img:"",cap:""}];
+  P.push(page("Page 5 · Photo Gallery",`<h2>${ph(d.galleryTitle,"Gallery heading")}</h2><div class="flourish">&#10022; &#10022; &#10022;</div>
+    <div class="gallery ${g.length===1?"n1":""}">${g.map((p,i)=>`<figure>${imgOr(p.img,"","Photo "+(i+1))}<figcaption>${esc(p.cap)}</figcaption></figure>`).join("")}</div>`));
+  // 6 Hymns & poem
+  const hy=d.hymns.map(h=>`<div class="hymn"><div class="ht">${ph(h.t,"Hymn title")}</div>${h.s?`<div class="hs">${esc(h.s)}</div>`:""}
+    <div class="hb">${h.b&&h.b.trim()?esc(h.b.trim()):`<span class="ph">[Hymn words]</span>`}</div></div>`).join("");
+  const poem = (d.poemTitle||d.poemText)?`<div class="boxed" style="break-inside:avoid"><div class="ht center" style="font-weight:700;letter-spacing:1px;text-transform:uppercase">${esc(d.poemTitle)}</div>
+      <div style="white-space:pre-wrap;text-align:center;font-style:italic">${esc(d.poemText)}</div>${d.poemBy?`<div class="center small">${esc(d.poemBy)}</div>`:""}</div>`
+     : `<div class="boxed center"><span class="ph">[Optional poem or tribute]</span></div>`;
+  P.push(page("Page 6 · Hymns",`<h2>Hymns of Comfort</h2><div class="flourish">&#10022; &#10022; &#10022;</div><div class="hymns">${hy}</div>${poem}`));
+  // 7 Graveside & bearers
+  P.push(page("Page 7 · Graveside",`<h2>At the Graveside</h2><div class="flourish">&#10022; &#10022; &#10022;</div>
+    <p class="center" style="font-style:italic;margin-top:0">${esc(d.graveIntro)}<br><b>${ph(d.interment,"Cemetery")}</b>, ${ph(d.intermentAddress,"Location")}</p>
+    <table class="oos">${orderRows(d.graveside)}</table>
+    <div class="two-col" style="margin-top:22px;columns:3">
+      <div class="fam-group"><b>Pallbearers</b>${nameList(d.pallbearers,"Names")}</div>
+      <div class="fam-group"><b>Flower Bearers</b>${nameList(d.flowerBearers,"Names")}</div>
+      <div class="fam-group"><b>Ushers</b>${nameList(d.ushers,"Names")}</div>
+    </div>`));
+  // 8 Back
+  const ack=(d.ackText||"").replace("[Name]", d.fullName||"[Name]");
+  P.push(page("Page 8 · Back cover",`<div class="back">
+    <h2>Acknowledgement</h2><div class="flourish">&#10022; &#10022; &#10022;</div>
+    <div class="ack">${paras(ack,"Thank-you message")}<p style="font-style:italic">${ph(d.ackFrom,"Signed")}</p></div>
+    ${d.repast?`<div class="boxed"><b style="color:var(--accent);letter-spacing:1.5px;text-transform:uppercase;font-size:11pt">Repast</b><br>${esc(d.repast).replace(/\n/g,"<br>")}</div>`:`<div class="boxed"><span class="ph">[Repast details, optional]</span></div>`}
+    ${imgOr(d.backPhoto,"bphoto","Back photo")}
+    <div class="verse" style="font-style:italic;max-width:5.6in">${ph(d.backVerse,"Closing verse")}</div>
+    <div class="script" style="font-size:30pt;color:var(--accent);margin-top:8px">Forever in our hearts</div>
+    <div class="credit">${d.funeralHome?`Arrangements by ${esc(d.funeralHome)}`:`<span class="ph">[Funeral home]</span>`}</div>
+  </div>`));
+  $("#pages").innerHTML=P.join("");
+  fitPreview();
+}
+function fitPreview(){
+  const pv=$(".preview"); if(!pv.clientWidth) return;
+  const w=Math.min(pv.clientWidth, window.innerWidth)-20, pageW=8.5*96+8;
+  $("#pages").style.zoom = w<pageW ? (w/pageW).toFixed(3) : 1;
+}
+window.addEventListener("resize",fitPreview);
+
+/* ======================= Actions ======================= */
+function setTheme(t){data.theme=t;document.body.className=document.body.className.replace(/theme-\w+/,"theme-"+t);$("#themeSel").value=t;save()}
+function setView(v){document.body.classList.toggle("view-edit",v==="edit");document.body.classList.toggle("view-preview",v==="preview");
+  $("#tabEdit").classList.toggle("on",v==="edit");$("#tabPrev").classList.toggle("on",v==="preview");if(v==="preview")fitPreview();window.scrollTo(0,0)}
+function exportData(){
+  const blob=new Blob([JSON.stringify(data)],{type:"application/json"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);
+  const n=(data.fullName||"program").replace(/[^\w]+/g,"-").replace(/^-|-$/g,"");
+  a.download=`${n}-program.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+}
+function importData(inp){
+  const f=inp.files[0];if(!f)return;const fr=new FileReader();
+  fr.onload=()=>{try{const obj=JSON.parse(fr.result);data=Object.assign(structuredClone(DEFAULTS),obj);openState={};
+    renderForm();renderPreview();setTheme(data.theme||"ivory");save();$("#status").textContent="Opened "+f.name}
+    catch(e){alert("That file could not be opened. Make sure it is a program file saved from this page.")}};
+  fr.readAsText(f);inp.value="";
+}
+function resetAll(){if(!confirm("Clear everything and start from the blank template?"))return;data=structuredClone(DEFAULTS);openState={};renderForm();renderPreview();setTheme("ivory");save()}
+
+/* ======================= Start ======================= */
+(async()=>{
+  await openDB();const saved=await dbGet();
+  if(saved) data=Object.assign(structuredClone(DEFAULTS),saved);
+  renderForm();renderPreview();setTheme(data.theme||"ivory");
+})();
+</script>
+</body>
+</html>
