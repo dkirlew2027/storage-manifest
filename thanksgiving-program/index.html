@@ -232,9 +232,9 @@ const DEFAULTS = {
   sketchPhoto:"",
   familyIntro:"She leaves to cherish her memory:",
   family:[
-    {grp:"Children", names:""},
-    {grp:"Grandchildren", names:""},
-    {grp:"Great-grandchildren", names:""},
+    {grp:"Children", names:"Millicent\nDavid N. Kirlew\nMarjorie\nSharon"},
+    {grp:"Grandchildren", names:"Marsha Johnson\nDavid R. Kirlew\nJodene Johnson\nJodi-Ann Johnson\nToni-Ann Wiggan\nTrevaughn Gilling"},
+    {grp:"Great-grandchildren", names:"Danielle\nCzar D. Kirlew\nKaison\nAyden Taylor\nNoble I. Kirlew\nMason Taylor\nSelene\nBeau Kirlew"},
     {grp:"Siblings", names:""},
     {grp:"Nieces, nephews, other relatives and friends", names:""}
   ],
@@ -508,7 +508,11 @@ function resetAll(){if(!confirm("Clear everything and start from the blank templ
 /* ======================= Start ======================= */
 (async()=>{
   await openDB();const saved=await dbGet();
-  if(saved) data=Object.assign(structuredClone(DEFAULTS),saved);
+  if(saved){
+    data=Object.assign(structuredClone(DEFAULTS),saved);
+    // Fill any still-empty family groups from the template without touching what was typed.
+    (data.family||[]).forEach(g=>{const d=DEFAULTS.family.find(x=>x.grp===g.grp);if(d&&!(g.names||"").trim())g.names=d.names});
+  }
   renderForm();renderPreview();setTheme(data.theme||"ivory");
 })();
 </script>
