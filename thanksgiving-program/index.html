@@ -156,8 +156,8 @@ body.hide-ph .ph{background:none;border:none;color:transparent}
       <h1>Service of Thanksgiving Program Builder</h1>
       <div class="row">
         <button class="btn primary" onclick="window.print()">Print / Save PDF</button>
-        <button class="btn" onclick="exportData()">Save file</button>
-        <button class="btn" onclick="document.getElementById('importFile').click()">Open file</button>
+        <button class="btn" onclick="exportData()">Download backup</button>
+        <button class="btn" onclick="document.getElementById('importFile').click()">Restore backup</button>
         <input type="file" id="importFile" accept=".json,application/json" hidden onchange="importData(this)">
         <select class="btn" id="themeSel" onchange="setTheme(this.value)" title="Color theme">
           <option value="ivory">Ivory &amp; Gold</option>
@@ -167,13 +167,13 @@ body.hide-ph .ph{background:none;border:none;color:transparent}
           <option value="jamaica">Jamaica (Black, Green, Gold)</option>
         </select>
       </div>
-      <div class="status" id="status">Changes save automatically in this browser.</div>
+      <div class="status" id="status">Connecting...</div>
     </div>
     <div class="help">
       <b>How to use:</b> Open a section below and type in the boxes. Anything still in a
       <span class="ph">[yellow box]</span> in the preview needs to be filled in.
-      To pass your work to another family member, tap <b>Save file</b> and send them the file.
-      They open this page and tap <b>Open file</b>. When it's final, tap <b>Print / Save PDF</b>
+      Everything saves automatically to one shared copy, so the whole family sees the same program
+      (it checks for others' changes every 30 seconds). When it's final, tap <b>Print / Save PDF</b>
       (Letter size, margins "None", turn on "Background graphics").
     </div>
     <div id="form"></div>
@@ -317,7 +317,7 @@ const paras = (txt,label,cls="") => {
   return txt.trim().split(/\n\s*\n/).map((p,i)=>`<p class="${i===0?cls:""}">${esc(p).replace(/\n/g,"<br>")}</p>`).join("");
 };
 const lines = t => (t||"").split("\n").map(s=>s.trim()).filter(Boolean);
-const imgOr = (src,cls,label) => src ? `<img class="${cls}" src="${src}" alt="">` : `<div class="${cls} photo-empty">[${esc(label)}]</div>`;
+const imgOr = (v,cls,label) => src(v) ? `<img class="${cls}" src="${src(v)}" alt="">` : `<div class="${cls} photo-empty">[${esc(label)}]</div>`;
 const firstName = () => (data.fullName||"").replace(/^(Mrs\.?|Miss|Ms\.?|Mother|Sister|Deaconess)\s+/i,"").split(" ")[0];
 
 /* ======================= Storage (IndexedDB, with fallback) ======================= */
@@ -325,18 +325,130 @@ let db=null;
 function openDB(){return new Promise(res=>{try{const r=indexedDB.open("thanksgiving-program",1);
   r.onupgradeneeded=()=>r.result.createObjectStore("kv");r.onsuccess=()=>{db=r.result;res()};r.onerror=()=>res();}catch(e){res()}})}
 function dbGet(){return new Promise(res=>{if(!db)return res(null);try{const q=db.transaction("kv").objectStore("kv").get("data");q.onsuccess=()=>res(q.result||null);q.onerror=()=>res(null)}catch(e){res(null)}})}
-let saveTimer=null;
-function save(){clearTimeout(saveTimer);saveTimer=setTimeout(()=>{
-  if(!db){$("#status").textContent="Auto-save is off in this browser. Use Save file to keep your work.";return}
-  try{const tx=db.transaction("kv","readwrite");tx.objectStore("kv").put(data,"data");
-    tx.oncomplete=()=>$("#status").textContent="Saved in this browser at "+new Date().toLocaleTimeString([], {hour:"numeric",minute:"2-digit"});
-    tx.onerror=()=>$("#status").textContent="Could not auto-save. Use Save file.";}catch(e){}
-},500)}
+function dbGetKey(k){return new Promise(res=>{if(!db)return res(null);try{const q=db.transaction("kv").objectStore("kv").get(k);q.onsuccess=()=>res(q.result??null);q.onerror=()=>res(null)}catch(e){res(null)}})}
+function dbPut(k,v){try{if(db)db.transaction("kv","readwrite").objectStore("kv").put(v,k)}catch(e){}}
+
+/* ======================= Shared copy for the whole family =======================
+   GitHub Pages can only serve files, so shared edits live in Pantry (free JSON storage,
+   https://getpantry.cloud), the same store the casket-poll page uses.
+   - Basket "thanksgiving-program" holds all the text. Each photo is its own basket
+     ("tp-img-<id>") because one basket is capped at about 1.4 MB.
+   - Only fields this device changed are written (read, apply changes, write back),
+     so two people editing different sections do not overwrite each other.
+   - Pantry allows about 2 calls per second for the whole store, so calls are queued. */
+const PANTRY_ID='e8583fad-b7fb-4294-8464-a553fbf333c5';
+const PANTRY='https://getpantry.cloud/apiv1/pantry/'+PANTRY_ID+'/basket/';
+const MAIN='thanksgiving-program';
+const KEYS=Object.keys(DEFAULTS);
+const J=v=>JSON.stringify(v??null);
+let synced={};          // key -> JSON of the value last seen on the shared copy
+let online=false, syncing=false, flushTimer=null, retryTimer=null;
+let q=Promise.resolve();
+const pause=ms=>new Promise(r=>setTimeout(r,ms));
+function pantry(fn){const p=q.then(fn);q=p.catch(()=>{}).then(()=>pause(600));return p}
+async function getBasket(name){return pantry(async()=>{
+  const r=await fetch(PANTRY+name+"?t="+Date.now(),{cache:"no-store"});
+  if(r.ok) return r.json();
+  const t=await r.text().catch(()=>"");
+  if(r.status===400&&/not exist|could not get basket/i.test(t)) return null;
+  throw new Error("HTTP "+r.status);
+})}
+async function postBasket(name,obj){return pantry(async()=>{
+  const r=await fetch(PANTRY+name,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(obj)});
+  if(!r.ok) throw new Error("HTTP "+r.status);
+})}
+const now=()=>new Date().toLocaleTimeString([],{hour:"numeric",minute:"2-digit"});
+function setStatus(t){$("#status").textContent=t}
+const dirtyKeys=()=>KEYS.filter(k=>J(data[k])!==synced[k]);
+
+// Every change goes through save(): keep a copy on this device, then push to the shared copy.
+function save(){
+  dbPut("data",data);
+  clearTimeout(flushTimer);flushTimer=setTimeout(flush,2000);
+  if(dirtyKeys().length) setStatus(online?"Saving for the family...":"Offline: kept on this device, will sync when back online.");
+}
+async function flush(){
+  if(syncing){clearTimeout(flushTimer);flushTimer=setTimeout(flush,1500);return}
+  if(!dirtyKeys().length) return;
+  syncing=true;clearTimeout(retryTimer);
+  try{
+    await uploadInlineImages();
+    const remote=await getBasket(MAIN)||{};
+    const dirty=new Set(dirtyKeys());
+    let changed=false;
+    for(const k of KEYS){
+      if(dirty.has(k)) remote[k]=data[k];
+      else if(k in remote && J(remote[k])!==J(data[k])){data[k]=remote[k];changed=true}
+      else if(!(k in remote)) remote[k]=data[k];
+    }
+    await postBasket(MAIN,remote);
+    KEYS.forEach(k=>synced[k]=J(remote[k]));dbPut("synced",synced);dbPut("data",data);
+    online=true;setStatus("Saved for the whole family at "+now());
+    if(changed) applyRemoteRender();
+  }catch(e){
+    online=false;setStatus("Offline: kept on this device, will sync when back online.");
+    retryTimer=setTimeout(flush,15000);
+  }finally{syncing=false}
+}
+async function refresh(){
+  if(syncing||document.hidden) return;
+  if(dirtyKeys().length) return flush();
+  try{
+    const remote=await getBasket(MAIN);if(!remote) return;
+    let changed=false;
+    for(const k of KEYS){ if(k in remote && J(remote[k])!==synced[k] && J(data[k])===synced[k]){data[k]=remote[k];synced[k]=J(remote[k]);changed=true} }
+    online=true;
+    if(changed){dbPut("data",data);dbPut("synced",synced);applyRemoteRender();setStatus("Updated with family changes at "+now())}
+  }catch(e){online=false}
+}
+let formStale=false;
+function applyRemoteRender(){
+  renderPreview();
+  if(document.body.classList.contains("theme-"+data.theme)===false) setThemeClass(data.theme);
+  const a=document.activeElement;
+  if(a&&$("#form").contains(a)&&/INPUT|TEXTAREA/.test(a.tagName)) formStale=true; else renderForm();
+}
+document.addEventListener("focusout",()=>{if(formStale){setTimeout(()=>{const a=document.activeElement;if(!(a&&$("#form").contains(a)&&/INPUT|TEXTAREA/.test(a.tagName))){formStale=false;renderForm()}},50)}});
+setInterval(refresh,30000);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)refresh()});
+
+/* Photos: stored as "pantry:<id>" in the program; the picture itself is in its own basket. */
+const IMG={}, loadingImg={};
+let rerenderTimer=null;
+function src(v){
+  if(!v) return "";
+  if(v.startsWith("pantry:")){const id=v.slice(7);if(IMG[id])return IMG[id];loadImg(id);return ""}
+  return v;
+}
+async function loadImg(id){
+  if(loadingImg[id]) return loadingImg[id];
+  return loadingImg[id]=(async()=>{
+    let d=await dbGetKey("img:"+id);
+    if(!d){try{const b=await getBasket("tp-img-"+id);d=b&&b.d}catch(e){delete loadingImg[id];return}}
+    if(d){IMG[id]=d;dbPut("img:"+id,d);clearTimeout(rerenderTimer);rerenderTimer=setTimeout(applyRemoteRender,150)}
+  })();
+}
+function imagePaths(){
+  const p=["coverPhoto","sketchPhoto","backPhoto"];
+  (data.gallery||[]).forEach((_,i)=>p.push("gallery."+i+".img"));
+  return p;
+}
+const getPath=path=>{const p=path.split(".");return p.length===1?data[p[0]]:data[p[0]][+p[1]][p[2]]};
+async function uploadInlineImages(){
+  for(const p of imagePaths()){
+    const v=getPath(p);
+    if(v&&v.startsWith("data:")){
+      const id=Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+      await postBasket("tp-img-"+id,{d:v});
+      IMG[id]=v;dbPut("img:"+id,v);setPath(p,"pantry:"+id);
+    }
+  }
+}
 
 /* ======================= Images ======================= */
 function readImage(file){return new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>{const im=new Image();
-  im.onload=()=>{const max=1600;let w=im.width,h=im.height;const k=Math.min(1,max/Math.max(w,h));w=Math.round(w*k);h=Math.round(h*k);
-    const c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(im,0,0,w,h);res(c.toDataURL("image/jpeg",.85))};
+  im.onload=()=>{const max=1400;let w=im.width,h=im.height;const k=Math.min(1,max/Math.max(w,h));w=Math.round(w*k);h=Math.round(h*k);
+    const c=document.createElement("canvas");c.width=w;c.height=h;c.getContext("2d").drawImage(im,0,0,w,h);res(c.toDataURL("image/jpeg",.8))};
   im.onerror=rej;im.src=fr.result};fr.onerror=rej;fr.readAsDataURL(file)})}
 
 /* ======================= Form rendering ======================= */
@@ -344,7 +456,7 @@ function fieldHTML([key,label,hint,multi,kind],val,path){
   const id=path;
   if(kind==="img"){
     return `<div class="field"><label>${esc(label)}</label><div class="imgbox">
-      ${val?`<img src="${val}" alt="">`:`<div class="empty">No photo</div>`}
+      ${val?`<img src="${src(val)}" alt="">`:`<div class="empty">No photo</div>`}
       <label class="btn small">Choose photo<input type="file" accept="image/*" hidden data-img="${id}"></label>
       ${val?`<button class="btn small danger" data-clearimg="${id}">Remove</button>`:""}</div></div>`;
   }
@@ -358,7 +470,7 @@ function listHTML(key){
   const items=data[key].map((it,i)=>{
     const cells=def.cols.map(([k,label,full,kind])=>{
       const p=`${key}.${i}.${k}`;
-      if(kind==="img") return `<div class="full imgbox">${it[k]?`<img src="${it[k]}" alt="">`:`<div class="empty">No photo</div>`}
+      if(kind==="img") return `<div class="full imgbox">${it[k]?`<img src="${src(it[k])}" alt="">`:`<div class="empty">No photo</div>`}
         <label class="btn small">Choose photo<input type="file" accept="image/*" hidden data-img="${p}"></label>
         ${it[k]?`<button class="btn small danger" data-clearimg="${p}">Remove</button>`:""}</div>`;
       if(kind==="ta") return `<div class="${full?"full":""}"><div class="mini">${esc(label)}</div><textarea data-path="${p}">${esc(it[k])}</textarea></div>`;
@@ -417,7 +529,7 @@ function renderPreview(){
   // 1 Cover
   P.push(page("Page 1 · Front cover",`<div class="cover">
     <div class="pre">${ph(d.coverTitle,"Cover heading")}</div>
-    ${d.coverPhoto?`<img class="photo" src="${d.coverPhoto}" alt="">`:`<div class="photo empty">[Cover photo]</div>`}
+    ${src(d.coverPhoto)?`<img class="photo" src="${src(d.coverPhoto)}" alt="">`:`<div class="photo empty">[Cover photo]</div>`}
     <div class="name script">${nm}</div>
     ${d.nickname?`<div class="nick">Affectionately known as "${esc(d.nickname)}"</div>`:`<div class="nick"><span class="ph">[Affectionately known as, optional]</span></div>`}
     <div class="dates"><div><b>Sunrise</b>${ph(d.birthDate,"Date of birth")}</div><div><b>Sunset</b>${ph(d.deathDate,"Date of passing")}</div></div>
@@ -487,11 +599,17 @@ function fitPreview(){
 window.addEventListener("resize",fitPreview);
 
 /* ======================= Actions ======================= */
-function setTheme(t){data.theme=t;document.body.className=document.body.className.replace(/theme-\w+/,"theme-"+t);$("#themeSel").value=t;save()}
+function setThemeClass(t){document.body.className=document.body.className.replace(/theme-\w+/,"theme-"+t);$("#themeSel").value=t}
+function setTheme(t){data.theme=t;setThemeClass(t);save()}
 function setView(v){document.body.classList.toggle("view-edit",v==="edit");document.body.classList.toggle("view-preview",v==="preview");
   $("#tabEdit").classList.toggle("on",v==="edit");$("#tabPrev").classList.toggle("on",v==="preview");if(v==="preview")fitPreview();window.scrollTo(0,0)}
-function exportData(){
-  const blob=new Blob([JSON.stringify(data)],{type:"application/json"});
+async function exportData(){
+  setStatus("Preparing backup...");
+  const copy=structuredClone(data), real=data;
+  for(const p of imagePaths()){const v=getPath(p);if(v&&v.startsWith("pantry:")){const id=v.slice(7);await loadImg(id);
+    if(IMG[id]){data=copy;setPath(p,IMG[id]);data=real}}}
+  setStatus("Backup downloaded at "+now());
+  const blob=new Blob([JSON.stringify(copy)],{type:"application/json"});
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);
   const n=(data.fullName||"program").replace(/[^\w]+/g,"-").replace(/^-|-$/g,"");
   a.download=`${n}-program.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);
@@ -499,11 +617,11 @@ function exportData(){
 function importData(inp){
   const f=inp.files[0];if(!f)return;const fr=new FileReader();
   fr.onload=()=>{try{const obj=JSON.parse(fr.result);data=Object.assign(structuredClone(DEFAULTS),obj);openState={};
-    renderForm();renderPreview();setTheme(data.theme||"ivory");save();$("#status").textContent="Opened "+f.name}
+    renderForm();renderPreview();setTheme(data.theme||"ivory");save();setStatus("Restored "+f.name+". Saving for the family...")}
     catch(e){alert("That file could not be opened. Make sure it is a program file saved from this page.")}};
   fr.readAsText(f);inp.value="";
 }
-function resetAll(){if(!confirm("Clear everything and start from the blank template?"))return;data=structuredClone(DEFAULTS);openState={};renderForm();renderPreview();setTheme("ivory");save()}
+function resetAll(){if(!confirm("This clears the program for the WHOLE family and starts from the blank template. Continue?"))return;data=structuredClone(DEFAULTS);openState={};renderForm();renderPreview();setTheme("ivory");save()}
 
 /* ======================= Start ======================= */
 (async()=>{
@@ -513,7 +631,26 @@ function resetAll(){if(!confirm("Clear everything and start from the blank templ
     // Fill any still-empty family groups from the template without touching what was typed.
     (data.family||[]).forEach(g=>{const d=DEFAULTS.family.find(x=>x.grp===g.grp);if(d&&!(g.names||"").trim())g.names=d.names});
   }
-  renderForm();renderPreview();setTheme(data.theme||"ivory");
+  // What this device last saw on the shared copy. Devices from before sharing existed
+  // use the blank template, so anything they typed counts as a change to send.
+  synced=await dbGetKey("synced")||Object.fromEntries(KEYS.map(k=>[k,J(DEFAULTS[k])]));
+  renderForm();renderPreview();setThemeClass(data.theme||"ivory");
+  setStatus("Connecting to the family copy...");
+  try{
+    const remote=await getBasket(MAIN);
+    online=true;
+    if(remote){
+      // Shared copy wins, except for fields this device changed and has not sent yet.
+      for(const k of KEYS){ if(k in remote && J(data[k])===synced[k]){data[k]=remote[k];synced[k]=J(remote[k])} }
+      dbPut("data",data);dbPut("synced",synced);
+      renderForm();renderPreview();setThemeClass(data.theme||"ivory");
+    }
+    if(!remote || dirtyKeys().length){ if(!remote) synced={}; setStatus("Saving for the family...");await flush() }
+    else setStatus("Up to date with the family copy ("+now()+")");
+  }catch(e){
+    setStatus("Offline: showing the copy on this device. Changes will sync when back online.");
+    retryTimer=setTimeout(flush,15000);
+  }
 })();
 </script>
 </body>
