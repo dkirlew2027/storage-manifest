@@ -166,6 +166,7 @@ body.hide-ph .ph{background:none;border:none;color:transparent}
       <h1>Service of Thanksgiving Program Builder</h1>
       <div class="row">
         <button class="btn primary" onclick="window.print()">Print / Save PDF</button>
+        <button class="btn" onclick="syncNow()">Sync now</button>
         <button class="btn" onclick="exportData()">Download backup</button>
         <button class="btn" onclick="document.getElementById('importFile').click()">Restore backup</button>
         <input type="file" id="importFile" accept=".json,application/json" hidden onchange="importData(this)">
@@ -374,12 +375,12 @@ async function getBasket(name){return pantry(async()=>{
   const r=await fetch(PANTRY+name+"?t="+Date.now(),{cache:"no-store"});
   if(r.ok) return r.json();
   const t=await r.text().catch(()=>"");
-  if(r.status===400&&/not exist|could not get basket/i.test(t)) return null;
-  throw new Error("HTTP "+r.status);
+  if(r.status===404||(r.status===400&&!/limit|too many|rate/i.test(t))) return null;
+  throw new Error("HTTP "+r.status+" "+t.slice(0,80));
 })}
 async function postBasket(name,obj){return pantry(async()=>{
   const r=await fetch(PANTRY+name,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(obj)});
-  if(!r.ok) throw new Error("HTTP "+r.status);
+  if(!r.ok) throw new Error("HTTP "+r.status+" "+(await r.text().catch(()=>"")).slice(0,80));
 })}
 const now=()=>new Date().toLocaleTimeString([],{hour:"numeric",minute:"2-digit"});
 function setStatus(t){$("#status").textContent=t}
@@ -393,7 +394,7 @@ function save(){
 }
 async function flush(){
   if(syncing){clearTimeout(flushTimer);flushTimer=setTimeout(flush,1500);return}
-  if(!dirtyKeys().length) return;
+  if(!dirtyKeys().length&&!pendingImg.length) return;
   syncing=true;clearTimeout(retryTimer);
   try{
     await uploadInlineImages();
@@ -410,7 +411,7 @@ async function flush(){
     online=true;setStatus("Saved for the whole family at "+now());
     if(changed) applyRemoteRender();
   }catch(e){
-    online=false;setStatus("Offline: kept on this device, will sync when back online.");
+    online=false;setStatus("Not synced yet ("+(navigator.onLine?e.message:"no internet")+"). Saved on this device, retrying.");
     retryTimer=setTimeout(flush,15000);
   }finally{syncing=false}
 }
@@ -467,17 +468,34 @@ function addLocalImage(d){
   IMG[id]=d;dbPut("img:"+id,d);pendingImg.push(id);dbPut("pendingImg",pendingImg);
   return "pantry:"+id;
 }
+// One storage record holds at most about 1.4 MB, so large photos are re-saved smaller.
+function fitSize(d){return new Promise(res=>{
+  if(d.length<1200000) return res(d);
+  const im=new Image();im.onload=()=>{let max=1200,q=.78,out=d;
+    for(let i=0;i<6&&out.length>=1200000;i++){const k=Math.min(1,max/Math.max(im.width,im.height));
+      const c=document.createElement("canvas");c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);
+      c.getContext("2d").drawImage(im,0,0,c.width,c.height);out=c.toDataURL("image/jpeg",q);max*=.85;q-=.06}
+    res(out)};im.onerror=()=>res(d);im.src=d})}
+async function syncNow(){
+  setStatus("Syncing...");
+  if(dirtyKeys().length||pendingImg.length){await flush()}
+  else{try{const remote=await getBasket(MAIN);
+      if(!remote){synced={};await flush();return}
+      let changed=false;for(const k of KEYS){if(k in remote&&J(remote[k])!==J(data[k])&&J(data[k])===synced[k]){data[k]=remote[k];changed=true}synced[k]=J(remote[k])}
+      dbPut("data",data);dbPut("synced",synced);if(changed)applyRemoteRender();online=true;setStatus("Up to date with the family copy ("+now()+")")}
+    catch(e){setStatus("Could not reach the family copy ("+(navigator.onLine?e.message:"no internet")+").")}}
+}
 async function uploadInlineImages(){
   for(const id of [...pendingImg]){
     if(!IMG[id]) IMG[id]=await dbGetKey("img:"+id);
-    if(IMG[id]) await postBasket("tp-img-"+id,{d:IMG[id]});
+    if(IMG[id]){IMG[id]=await fitSize(IMG[id]);await postBasket("tp-img-"+id,{d:IMG[id]})}
     pendingImg=pendingImg.filter(x=>x!==id);dbPut("pendingImg",pendingImg);
   }
   for(const p of imagePaths()){
     const v=getPath(p);
     if(v&&v.startsWith("data:")){
       const id=Date.now().toString(36)+Math.random().toString(36).slice(2,7);
-      await postBasket("tp-img-"+id,{d:v});
+      const fv=await fitSize(v);await postBasket("tp-img-"+id,{d:fv});setPath(p,fv);
       IMG[id]=v;dbPut("img:"+id,v);setPath(p,"pantry:"+id);
     }
   }
@@ -731,7 +749,7 @@ function resetAll(){if(!confirm("This clears the program for the WHOLE family an
     if(!remote || dirtyKeys().length){ if(!remote) synced={}; setStatus("Saving for the family...");await flush() }
     else setStatus("Up to date with the family copy ("+now()+")");
   }catch(e){
-    setStatus("Offline: showing the copy on this device. Changes will sync when back online.");
+    setStatus("Could not reach the family copy ("+(navigator.onLine?e.message:"no internet")+"). Showing this device's copy. Tap Sync now to retry.");
     retryTimer=setTimeout(flush,15000);
   }
 })();
