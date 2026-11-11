@@ -15,7 +15,12 @@ body.theme-jamaica{--accent:#0b7a3b; --ink:#141414; --paper:#fffef9; --soft:#fbf
 body.theme-lavender{--accent:#7a5c9e; --ink:#2e2638; --paper:#fdfbff; --soft:#efe8f6; --deep:#3d2f52;}
 body.theme-navy{--accent:#b08d3c; --ink:#1b2333; --paper:#fdfdfb; --soft:#e9edf4; --deep:#1b2a4a;}
 body.theme-rose{--accent:#a5525f; --ink:#3a2a2c; --paper:#fffaf9; --soft:#f7e6e6; --deep:#5a2f36;}
-body.theme-garden{--accent:#b08d57; --ink:#4a3b5c; --paper:#f7f1fb; --soft:#ebe0f4; --deep:#71519c;}
+body.theme-garden{--accent:#b08d57; --ink:#4a3b5c; --paper:#f7f1fb; --soft:#ebe0f4; --deep:#71519c;
+  --w1:255 236 246; --w2:214 196 238; --w3:232 214 245; --g1:#f8f2fc; --g2:#efe4f7; --g3:#f7eef8;}
+body.theme-plum{--accent:#b38a4f; --ink:#3d2436; --paper:#fbf6f9; --soft:#f1e3ec; --deep:#6b2c5c;
+  --w1:250 230 240; --w2:222 190 214; --w3:238 214 230; --g1:#fbf4f8; --g2:#f3e4ee; --g3:#faf1f6;}
+body{--wa:1}
+body.wash-soft{--wa:.5}
 
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
@@ -105,22 +110,28 @@ body.hide-ph .ph{background:none;border:none;color:transparent}
 .cover .divider{color:var(--accent);letter-spacing:6px;margin:8px 0 2px;font-size:12pt}
 /* ---- Lavender Garden theme: watercolor wash, florals, soft-edged photo ---- */
 .flora{display:none;position:absolute;pointer-events:none;z-index:0}
-body.theme-garden .flora{display:block}
-body.theme-garden .page>*:not(.flora){position:relative;z-index:1}
+body:is(.theme-garden,.theme-plum) .flora{display:block}
+body:is(.theme-garden,.theme-plum) .page>*:not(.flora){position:relative;z-index:1}
 .flora.tr{top:-.12in;right:-.12in;width:1.7in}
 .flora.bl{bottom:-.12in;left:-.12in;width:1.7in;transform:rotate(180deg)}
 .cover-page .flora.tr{width:2.9in}.cover-page .flora.bl{width:2.9in}
-body.theme-garden .page{background:
-  radial-gradient(ellipse 60% 40% at 20% 15%,rgba(255,236,246,.9),transparent 70%),
-  radial-gradient(ellipse 55% 45% at 85% 60%,rgba(214,196,238,.55),transparent 70%),
-  radial-gradient(ellipse 70% 50% at 30% 90%,rgba(232,214,245,.7),transparent 70%),
-  linear-gradient(160deg,#f8f2fc,#efe4f7 55%,#f7eef8)}
-body.theme-garden .page::before{border-color:var(--accent);opacity:.8}
-body.theme-garden .cover{padding-top:.3in}
-body.theme-garden .cover .photo{width:4.4in;height:4.3in;margin:10px 0 6px;border-radius:14px;border:0;box-shadow:none;background:transparent;
+/* Gradients fade to the same color at zero opacity (not "transparent"), which some PDF printers
+   turn into gray bands. --wa sets how strong the colored wash is (Plain white / Soft / Rich). */
+body:is(.theme-garden,.theme-plum) .page{background:
+  radial-gradient(ellipse 60% 40% at 20% 15%,rgb(var(--w1) / calc(.9*var(--wa))),rgb(var(--w1) / 0) 70%),
+  radial-gradient(ellipse 55% 45% at 85% 60%,rgb(var(--w2) / calc(.55*var(--wa))),rgb(var(--w2) / 0) 70%),
+  radial-gradient(ellipse 70% 50% at 30% 90%,rgb(var(--w3) / calc(.7*var(--wa))),rgb(var(--w3) / 0) 70%),
+  linear-gradient(160deg,var(--g1),var(--g2) 55%,var(--g3))}
+body.wash-soft.theme-garden{--g1:#fdfaff;--g2:#f6f0fb;--g3:#fcf8fd}
+body.wash-soft.theme-plum{--g1:#fefafc;--g2:#f8eff5;--g3:#fdf8fb}
+body.wash-plain:is(.theme-garden,.theme-plum) .page{background:#fff}
+body.theme-plum .flora{filter:hue-rotate(38deg) saturate(1.1)}
+body:is(.theme-garden,.theme-plum) .page::before{border-color:var(--accent);opacity:.8}
+body:is(.theme-garden,.theme-plum) .cover{padding-top:.3in}
+body:is(.theme-garden,.theme-plum) .cover .photo{width:4.4in;height:4.3in;margin:10px 0 6px;border-radius:14px;border:0;box-shadow:none;background:transparent;
   -webkit-mask-image:radial-gradient(ellipse 72% 70% at 50% 45%,#000 58%,transparent 80%);mask-image:radial-gradient(ellipse 72% 70% at 50% 45%,#000 58%,transparent 80%)}
-body.theme-garden .cover .photo.photo-empty{-webkit-mask-image:none;mask-image:none;border:1px dashed var(--accent)}
-body.theme-garden .cover .pre{letter-spacing:5px;font-weight:600}
+body:is(.theme-garden,.theme-plum) .cover .photo.photo-empty{-webkit-mask-image:none;mask-image:none;border:1px dashed var(--accent)}
+body:is(.theme-garden,.theme-plum) .cover .pre{letter-spacing:5px;font-weight:600}
 .cover .nick{font-size:15pt;font-style:italic;margin-top:6px}
 .cover .dates{display:flex;gap:40px;justify-content:center;margin:16px 0 8px;font-size:15pt}
 .cover .dates b{display:block;color:var(--accent);text-transform:uppercase;letter-spacing:2px;font-size:11pt}
@@ -224,6 +235,7 @@ body.theme-garden .cover .pre{letter-spacing:5px;font-weight:600}
           <option value="rose">Rose</option>
           <option value="jamaica">Jamaica (Black, Green, Gold)</option>
           <option value="garden">Lavender Garden (florals)</option>
+          <option value="plum">Plum &amp; Gold (florals)</option>
         </select>
       </div>
       <div class="status" id="status">Connecting...</div>
@@ -237,6 +249,10 @@ body.theme-garden .cover .pre{letter-spacing:5px;font-weight:600}
     </div>
     <div id="form"></div>
     <div style="padding:14px">
+      <label style="font-size:13px">Page background (florals themes):
+        <select class="btn" id="washSel" onchange="data.bgWash=this.value;renderPreview();save()">
+          <option value="soft">Soft (best for printing)</option><option value="rich">Rich color</option><option value="plain">Plain white</option>
+        </select></label><br><br>
       <label style="font-size:13px"><input type="checkbox" id="hidePh" onchange="document.body.classList.toggle('hide-ph',this.checked)"> Hide unfilled placeholders (for a clean print)</label><br><br>
       <button class="btn danger small" onclick="resetAll()">Start over (clears everything)</button>
     </div>
@@ -344,7 +360,8 @@ const DEFAULTS = {
   ackFrom:"The Family",
   repast:"", backVerse:"\"Precious in the sight of the LORD is the death of his saints.\" Psalm 116:15",
   backPhoto:"",
-  photoAdj:{}
+  photoAdj:{},
+  bgWash:"soft"
 };
 
 let data = structuredClone(DEFAULTS);
@@ -441,10 +458,10 @@ const MAIN='thanksgiving-program';
 const KEYS=Object.keys(DEFAULTS);
 const J=v=>JSON.stringify(v??null);
 let synced={};          // key -> JSON of the value last seen on the shared copy
-let online=false, syncing=false, flushTimer=null, retryTimer=null;
+let online=false, syncing=false, flushTimer=null, retryTimer=null, retryDelay=8000;
 let q=Promise.resolve();
 const pause=ms=>new Promise(r=>setTimeout(r,ms));
-function pantry(fn){const p=q.then(fn);q=p.catch(()=>{}).then(()=>pause(600));return p}
+function pantry(fn){const p=q.then(fn);q=p.catch(()=>{}).then(()=>pause(1300));return p}
 async function getBasket(name){return pantry(async()=>{
   const r=await fetch(PANTRY+name+"?t="+Date.now(),{cache:"no-store"});
   if(r.ok) return r.json();
@@ -471,7 +488,7 @@ async function flush(){
   if(!dirtyKeys().length&&!pendingImg.length) return;
   syncing=true;clearTimeout(retryTimer);
   try{
-    await uploadInlineImages();
+    await uploadInlineImages();   // only photos pasted in from an old backup file (rare)
     const remote=await getBasket(MAIN)||{};
     const dirty=new Set(dirtyKeys());
     let changed=false;
@@ -482,11 +499,15 @@ async function flush(){
     }
     await postBasket(MAIN,remote);
     KEYS.forEach(k=>synced[k]=J(remote[k]));dbPut("synced",synced);dbPut("data",data);
-    online=true;setStatus("Saved for the whole family at "+now());
+    online=true;retryDelay=8000;
     if(changed) applyRemoteRender();
+    await uploadPendingPhotos();
+    setStatus("Saved for the whole family at "+now());
   }catch(e){
-    online=false;setStatus("Not synced yet ("+(navigator.onLine?e.message:"no internet")+"). Saved on this device, retrying.");
-    retryTimer=setTimeout(flush,15000);
+    online=false;
+    const left=pendingImg.length?` ${pendingImg.length} photo${pendingImg.length>1?"s":""} still to upload.`:"";
+    setStatus(`Still saving (${navigator.onLine?"storage busy, retrying":"no internet"}).${left} Keep this page open.`);
+    retryTimer=setTimeout(flush,retryDelay);retryDelay=Math.min(retryDelay*2,120000);
   }finally{syncing=false}
 }
 async function refresh(){
@@ -509,7 +530,23 @@ function applyRemoteRender(){
 }
 document.addEventListener("focusout",()=>{if(formStale){setTimeout(()=>{const a=document.activeElement;if(!(a&&$("#form").contains(a)&&/INPUT|TEXTAREA/.test(a.tagName))){formStale=false;renderForm()}},50)}});
 setInterval(refresh,30000);
-document.addEventListener("visibilitychange",()=>{if(!document.hidden)refresh()});
+document.addEventListener("visibilitychange",()=>{
+  if(document.hidden){ if(dirtyKeys().length||pendingImg.length){clearTimeout(flushTimer);flush()} }
+  else refresh();
+});
+window.addEventListener("beforeunload",e=>{ if(dirtyKeys().length||pendingImg.length){e.preventDefault();e.returnValue=""} });
+// The free storage deletes anything untouched for 30 days. Re-read each photo about weekly so
+// nothing expires before the service (reading resets the 30-day clock).
+async function keepPhotosAlive(){
+  for(const p of imagePaths()){
+    const v=getPath(p);if(!v||!v.startsWith("pantry:")) continue;
+    const id=v.slice(7);if(pendingImg.includes(id)) continue;
+    const last=await dbGetKey("touch:"+id)||0;
+    if(Date.now()-last<5*864e5) continue;
+    try{const b=await getBasket("tp-img-"+id);if(b){dbPut("touch:"+id,Date.now());if(b.d&&!IMG[id]){IMG[id]=b.d;dbPut("img:"+id,b.d)}}}catch(e){return}
+  }
+}
+setTimeout(()=>{keepPhotosAlive()},20000);
 
 /* Photos: stored as "pantry:<id>" in the program; the picture itself is in its own basket. */
 const IMG={}, loadingImg={};
@@ -531,6 +568,7 @@ async function loadImg(id){
 function imagePaths(){
   const p=["coverPhoto","sketchPhoto","backPhoto"];
   (data.gallery||[]).forEach((_,i)=>p.push("gallery."+i+".img"));
+  (data.tributes||[]).forEach((_,i)=>p.push("tributes."+i+".img"));
   return p;
 }
 const getPath=path=>{const p=path.split(".");return p.length===1?data[p[0]]:data[p[0]][+p[1]][p[2]]};
@@ -559,12 +597,16 @@ async function syncNow(){
       dbPut("data",data);dbPut("synced",synced);if(changed)applyRemoteRender();online=true;setStatus("Up to date with the family copy ("+now()+")")}
     catch(e){setStatus("Could not reach the family copy ("+(navigator.onLine?e.message:"no internet")+").")}}
 }
-async function uploadInlineImages(){
+async function uploadPendingPhotos(){
+  const total=pendingImg.length;let n=0;
   for(const id of [...pendingImg]){
+    n++;setStatus(`Saved. Uploading photo ${n} of ${total}... keep this page open.`);
     if(!IMG[id]) IMG[id]=await dbGetKey("img:"+id);
-    if(IMG[id]){IMG[id]=await fitSize(IMG[id]);await postBasket("tp-img-"+id,{d:IMG[id]})}
+    if(IMG[id]){IMG[id]=await fitSize(IMG[id]);await postBasket("tp-img-"+id,{d:IMG[id]});dbPut("touch:"+id,Date.now())}
     pendingImg=pendingImg.filter(x=>x!==id);dbPut("pendingImg",pendingImg);
   }
+}
+async function uploadInlineImages(){
   for(const p of imagePaths()){
     const v=getPath(p);
     if(v&&v.startsWith("data:")){
@@ -597,6 +639,7 @@ function thumb(v){return v?(src(v)?`<div class="thumb frame"><img src="${src(v)}
 function shapeFor(p){
   if(p==="coverPhoto") return {w:3.6,h:4.5,r:"50%"};
   if(p==="backPhoto") return {w:3.3,h:3.3,r:"50%"};
+  if(p.startsWith("tributes.")) return {w:2.6,h:3.2,r:"0"};
   if(p==="sketchPhoto") return {w:2.6,h:3.2,r:"0"};
   const i=+p.split(".")[1]||0, t=galleryTile(i);return {w:t.c*COL_IN,h:t.r*ROW_IN,r:"0"};
 }
@@ -788,6 +831,8 @@ function coverName(full){
     <div class="rest">${w.map(esc).join(" ")} <span class="last">${esc(last)}</span></div><div class="divider">&#10022; &#10049; &#10022;</div>`;
 }
 function renderPreview(){
+  const w=data.bgWash||"soft";document.body.classList.toggle("wash-soft",w==="soft");document.body.classList.toggle("wash-plain",w==="plain");
+  const ws=document.getElementById("washSel");if(ws&&ws.value!==w)ws.value=w;
   const d=data, nm=ph(d.fullName,"Her full name");
   const P=[];pageNo=0;
   // 1 Cover
