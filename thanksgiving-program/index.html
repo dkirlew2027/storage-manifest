@@ -15,6 +15,7 @@ body.theme-jamaica{--accent:#0b7a3b; --ink:#141414; --paper:#fffef9; --soft:#fbf
 body.theme-lavender{--accent:#7a5c9e; --ink:#2e2638; --paper:#fdfbff; --soft:#efe8f6; --deep:#3d2f52;}
 body.theme-navy{--accent:#b08d3c; --ink:#1b2333; --paper:#fdfdfb; --soft:#e9edf4; --deep:#1b2a4a;}
 body.theme-rose{--accent:#a5525f; --ink:#3a2a2c; --paper:#fffaf9; --soft:#f7e6e6; --deep:#5a2f36;}
+body.theme-garden{--accent:#b08d57; --ink:#4a3b5c; --paper:#f7f1fb; --soft:#ebe0f4; --deep:#71519c;}
 
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
@@ -97,6 +98,29 @@ body.hide-ph .ph{background:none;border:none;color:transparent}
 .cover .photo{width:3.6in;height:4.5in;border-radius:50%/50%;object-fit:cover;border:5px solid var(--paper);box-shadow:0 0 0 2px var(--accent);margin:22px 0 18px;background:var(--soft)}
 .cover .photo.empty,.photo-empty{display:grid;place-items:center;color:#8a8a8a;font-size:12pt;font-style:italic}
 .cover .name{font-size:44pt;line-height:1.05;color:var(--deep)}
+.cover .honor{font-size:12pt;letter-spacing:4px;text-transform:uppercase;color:var(--deep);margin-top:4px}
+.cover .first{font-size:54pt;line-height:1;color:var(--deep)}
+.cover .rest{font-size:30pt;line-height:1.08;letter-spacing:2px;text-transform:uppercase;font-weight:600;color:var(--deep)}
+.cover .rest .last{color:var(--accent)}
+.cover .divider{color:var(--accent);letter-spacing:6px;margin:8px 0 2px;font-size:12pt}
+/* ---- Lavender Garden theme: watercolor wash, florals, soft-edged photo ---- */
+.flora{display:none;position:absolute;pointer-events:none;z-index:0}
+body.theme-garden .flora{display:block}
+body.theme-garden .page>*:not(.flora){position:relative;z-index:1}
+.flora.tr{top:-.12in;right:-.12in;width:1.7in}
+.flora.bl{bottom:-.12in;left:-.12in;width:1.7in;transform:rotate(180deg)}
+.cover-page .flora.tr{width:2.9in}.cover-page .flora.bl{width:2.9in}
+body.theme-garden .page{background:
+  radial-gradient(ellipse 60% 40% at 20% 15%,rgba(255,236,246,.9),transparent 70%),
+  radial-gradient(ellipse 55% 45% at 85% 60%,rgba(214,196,238,.55),transparent 70%),
+  radial-gradient(ellipse 70% 50% at 30% 90%,rgba(232,214,245,.7),transparent 70%),
+  linear-gradient(160deg,#f8f2fc,#efe4f7 55%,#f7eef8)}
+body.theme-garden .page::before{border-color:var(--accent);opacity:.8}
+body.theme-garden .cover{padding-top:.3in}
+body.theme-garden .cover .photo{width:4.4in;height:4.3in;margin:10px 0 6px;border-radius:14px;border:0;box-shadow:none;background:transparent;
+  -webkit-mask-image:radial-gradient(ellipse 72% 70% at 50% 45%,#000 58%,transparent 80%);mask-image:radial-gradient(ellipse 72% 70% at 50% 45%,#000 58%,transparent 80%)}
+body.theme-garden .cover .photo.photo-empty{-webkit-mask-image:none;mask-image:none;border:1px dashed var(--accent)}
+body.theme-garden .cover .pre{letter-spacing:5px;font-weight:600}
 .cover .nick{font-size:15pt;font-style:italic;margin-top:6px}
 .cover .dates{display:flex;gap:40px;justify-content:center;margin:16px 0 8px;font-size:15pt}
 .cover .dates b{display:block;color:var(--accent);text-transform:uppercase;letter-spacing:2px;font-size:11pt}
@@ -194,6 +218,7 @@ body.hide-ph .ph{background:none;border:none;color:transparent}
           <option value="lavender">Lavender</option>
           <option value="rose">Rose</option>
           <option value="jamaica">Jamaica (Black, Green, Gold)</option>
+          <option value="garden">Lavender Garden (florals)</option>
         </select>
       </div>
       <div class="status" id="status">Connecting...</div>
@@ -244,7 +269,7 @@ body.hide-ph .ph{background:none;border:none;color:transparent}
 <script>
 /* ======================= Default template ======================= */
 const DEFAULTS = {
-  theme:"ivory",
+  theme:"garden",
   coverTitle:"A Service of Thanksgiving for the Life of",
   fullName:"", nickname:"", birthDate:"", deathDate:"",
   coverVerse:"\"I have fought a good fight, I have finished my course, I have kept the faith.\" 2 Timothy 4:7",
@@ -708,8 +733,33 @@ function orderRows(items){
 }
 function nameList(t,label){const l=lines(t);return l.length?l.map(esc).join("<br>"):`<span class="ph">[${esc(label)}]</span>`}
 let pageNo=0;
-function page(label,inner,cls=""){label=`Page ${++pageNo} · `+label.replace(/^Page \d+ · /,"");return `<div class="page-wrap"><div class="page-label">${label}</div><div class="page ${cls}">${inner}</div></div>`}
+// Original floral corner (drawn here, not copied from any template): roses, buds, leaves, lavender sprigs.
+const FLORA=(()=>{
+  const rose=(x,y,r,c1,c2,c3)=>{let g=`<g transform="translate(${x} ${y})">`;
+    for(let k=0;k<7;k++)g+=`<ellipse rx="${r*.62}" ry="${r*.44}" cx="${r*.42}" fill="${c1}" opacity=".92" transform="rotate(${k*51.4})"/>`;
+    for(let k=0;k<5;k++)g+=`<ellipse rx="${r*.42}" ry="${r*.3}" cx="${r*.26}" fill="${c2}" opacity=".95" transform="rotate(${k*72+20})"/>`;
+    g+=`<circle r="${r*.28}" fill="${c3}"/><path d="M${-r*.14} 0a${r*.14} ${r*.14} 0 1 1 ${r*.2} ${r*.08}" fill="none" stroke="${c1}" stroke-width="${r*.05}"/></g>`;return g};
+  const leaf=(x,y,a,l)=>`<path transform="translate(${x} ${y}) rotate(${a})" d="M0 0 Q${l*.5} ${-l*.28} ${l} 0 Q${l*.5} ${l*.28} 0 0Z" fill="#a9b39a" opacity=".85"/>`;
+  const sprig=(x,y,a)=>{let g=`<g transform="translate(${x} ${y}) rotate(${a})"><path d="M0 0 L0 -70" stroke="#8f9a82" stroke-width="1.5"/>`;
+    for(let k=0;k<9;k++)g+=`<ellipse cx="${k%2?3:-3}" cy="${-14-k*6.5}" rx="3.2" ry="4.6" fill="#9b7fc4" opacity="${.95-k*.06}"/>`;return g+"</g>"};
+  return `<svg viewBox="0 0 260 260" xmlns="http://www.w3.org/2000/svg">
+    ${leaf(150,60,200,70)}${leaf(200,120,110,70)}${leaf(120,30,160,55)}${leaf(225,165,95,55)}
+    ${sprig(110,90,-55)}${sprig(170,175,-15)}${sprig(95,55,-75)}
+    ${rose(205,55,52,"#c9b2e6","#b597dc","#9c7ccf")}${rose(140,40,34,"#f3d6dc","#ecbfca","#e2a6b5")}
+    ${rose(222,130,34,"#fbf3ea","#f1e2d1","#e8d2bb")}${rose(175,100,22,"#d8c6ee","#c7aee6","#b394dc")}
+    ${rose(240,200,20,"#f3d6dc","#ecbfca","#e2a6b5")}</svg>`})();
+function page(label,inner,cls=""){label=`Page ${++pageNo} · `+label.replace(/^Page \d+ · /,"");return `<div class="page-wrap"><div class="page-label">${label}</div><div class="page ${cls}"><div class="flora tr">${FLORA}</div><div class="flora bl">${FLORA}</div>${inner}</div></div>`}
 
+function coverName(full){
+  full=(full||"").trim();
+  if(!full) return `<div class="name script"><span class="ph">[Her full name]</span></div>`;
+  const m=full.match(/^((?:Mrs?\.?|Miss|Ms\.?|Mother|Sister|Deaconess|Evangelist|Rev\.?)\s+)?(.*)$/i);
+  const honor=(m[1]||"").trim(), w=m[2].split(/\s+/).filter(Boolean);
+  if(w.length<2) return `${honor?`<div class="honor">${esc(honor)}</div>`:""}<div class="first script">${esc(w[0]||honor)}</div>`;
+  const last=w.pop(), first=w.shift();
+  return `${honor?`<div class="honor">${esc(honor)}</div>`:""}<div class="first script">${esc(first)}</div>
+    <div class="rest">${w.map(esc).join(" ")} <span class="last">${esc(last)}</span></div><div class="divider">&#10022; &#10049; &#10022;</div>`;
+}
 function renderPreview(){
   const d=data, nm=ph(d.fullName,"Her full name");
   const P=[];pageNo=0;
@@ -717,13 +767,13 @@ function renderPreview(){
   P.push(page("Page 1 · Front cover",`<div class="cover">
     <div class="pre">${ph(d.coverTitle,"Cover heading")}</div>
     ${imgOr(d.coverPhoto,"photo","Cover photo")}
-    <div class="name script">${nm}</div>
+    ${coverName(d.fullName)}
     ${d.nickname?`<div class="nick">Affectionately known as "${esc(d.nickname)}"</div>`:`<div class="nick"><span class="ph">[Affectionately known as, optional]</span></div>`}
     <div class="dates"><div><b>Sunrise</b>${ph(d.birthDate,"Date of birth")}</div><div><b>Sunset</b>${ph(d.deathDate,"Date of passing")}</div></div>
     <div class="verse">${ph(d.coverVerse,"Verse")}</div>
     <div class="svc">${ph(d.serviceDate,"Date")} at ${ph(d.serviceTime,"Time")}<br>
       <b>${ph(d.church,"Church name")}</b><br>${ph(d.churchAddress,"Church address")}</div>
-  </div>`));
+  </div>`,"cover-page"));
   // 2 Order of service
   P.push(page("Page 2 · Order of Service",`<h2>Order of Service</h2><div class="flourish">&#10022; &#10022; &#10022;</div>
     <div class="officiants">
