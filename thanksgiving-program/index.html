@@ -116,6 +116,11 @@ body.hide-ph .ph{background:none;border:none;color:transparent}
 .gallery figure{margin:0;text-align:center}
 .gallery .frame,.gallery .photo-empty{width:100%;height:2.7in;border:3px solid var(--paper);box-shadow:0 0 0 1.5px var(--accent);background:var(--soft)}
 .gallery figcaption{font-style:italic;font-size:12pt;margin-top:4px}
+.gallery.collage,.gallery.grid{display:grid;grid-template-columns:repeat(6,1fr);grid-auto-rows:.96in;gap:6px;grid-auto-flow:dense}
+.gallery.collage figure,.gallery.grid figure{position:relative;margin:0;min-height:0}
+.gallery.collage .tile,.gallery.grid .tile{width:100%;height:100%;border:3px solid var(--paper);box-shadow:0 0 0 1.5px var(--accent);background:var(--soft)}
+.gallery.collage figcaption,.gallery.grid figcaption{position:absolute;left:3px;right:3px;bottom:3px;margin:0;padding:3px 6px;font-size:10.5pt;
+  background:color-mix(in srgb,var(--paper) 82%,transparent);text-align:center}
 .gallery.n1{grid-template-columns:1fr}.gallery.n1 .frame,.gallery.n1 .photo-empty{height:7in}
 /* hymns */
 .hymns{columns:2;column-gap:.35in;font-size:12.5pt;line-height:1.3}
@@ -265,6 +270,7 @@ const DEFAULTS = {
   predeceased:"",
   gallery:[ {img:"",cap:""},{img:"",cap:""},{img:"",cap:""},{img:"",cap:""} ],
   galleryTitle:"Precious Memories",
+  galleryLayout:"collage",
   hymns:[
     {t:"The Lord's My Shepherd", s:"Opening Hymn", b:""},
     {t:"", s:"Hymn", b:""},
@@ -309,7 +315,7 @@ const SECTIONS = [
   ]},
   {title:"Family", page:"Page 4", fields:[["familyIntro","Opening line","e.g. She leaves to cherish her memory / Left to mourn"]], list:"family",
    after:[["predeceased","Predeceased by","optional, e.g. her husband, a son",true]]},
-  {title:"Photo Gallery", page:"Page 5", fields:[["galleryTitle","Gallery heading"]], list:"gallery"},
+  {title:"Photo Gallery / Collage", page:"Page 5+", fields:[["galleryTitle","Gallery heading"],["galleryLayout","Layout","",false,"select:collage=Collage (mixed sizes, 7 photos per page)|grid=Grid (even boxes, 6 per page)"]], list:"gallery"},
   {title:"Hymns & Poem", page:"Page 6", list:"hymns",
    after:[["poemTitle","Poem or tribute title","optional"],["poemText","Poem or tribute text","Use an original family poem or one you have permission to print",true],["poemBy","Written by","optional"]]},
   {title:"Pallbearers & Helpers", page:"Page 7", fields:[
@@ -501,6 +507,19 @@ async function uploadInlineImages(){
   }
 }
 
+/* ======================= Gallery / collage layout =======================
+   Each gallery page is a 6-column x 8-row grid. Collage pages hold up to 7 photos in
+   mixed sizes; grid pages hold up to 6 even boxes. Extra photos flow onto more pages. */
+const COL_IN=7.0/6, ROW_IN=0.96;
+const COLLAGE={1:[[6,8]],2:[[6,4],[6,4]],3:[[6,4],[3,4],[3,4]],4:[[3,4],[3,4],[3,4],[3,4]],
+  5:[[4,4],[2,4],[2,4],[2,4],[2,4]],6:[[3,3],[3,3],[2,2],[2,2],[2,2],[6,3]],
+  7:[[4,3],[2,3],[2,2],[2,2],[2,2],[3,3],[3,3]]};
+const GRID={1:[[6,8]],2:[[6,4],[6,4]],3:[[6,3],[3,5],[3,5]],4:[[3,4],[3,4],[3,4],[3,4]],
+  5:[[6,4],[3,4],[3,4],[3,4],[3,4]],6:[[3,3],[3,3],[3,3],[3,3],[3,2],[3,2]]};
+const perPage=()=>data.galleryLayout==="grid"?6:7;
+function galleryTile(i){const n=Math.max(1,(data.gallery||[]).length),per=perPage(),start=Math.floor(i/per)*per,
+  cnt=Math.min(per,n-start),pat=(data.galleryLayout==="grid"?GRID:COLLAGE)[cnt]||COLLAGE[7];const [c,r]=pat[i-start]||[2,2];return {c,r}}
+
 /* ======================= Photo adjust (position, zoom, rotate) ======================= */
 // Each photo fills a fixed shape, so part of it is always cropped. The family picks
 // which part shows: x/y are the focus point (0-100%), z is the zoom.
@@ -511,7 +530,7 @@ function shapeFor(p){
   if(p==="coverPhoto") return {w:3.6,h:4.5,r:"50%"};
   if(p==="backPhoto") return {w:3.3,h:3.3,r:"50%"};
   if(p==="sketchPhoto") return {w:2.6,h:3.2,r:"0"};
-  return (data.gallery||[]).length===1?{w:6.9,h:7,r:"0"}:{w:3.38,h:2.7,r:"0"};
+  const i=+p.split(".")[1]||0, t=galleryTile(i);return {w:t.c*COL_IN,h:t.r*ROW_IN,r:"0"};
 }
 let adj=null; // {path, id, a}
 function openAdjust(p){
@@ -553,6 +572,11 @@ function readImage(file){return new Promise((res,rej)=>{const fr=new FileReader(
 /* ======================= Form rendering ======================= */
 function fieldHTML([key,label,hint,multi,kind],val,path){
   const id=path;
+  if(kind&&kind.startsWith("select:")){
+    const opts=kind.slice(7).split("|").map(o=>o.split("="));
+    return `<div class="field"><label for="${id}">${esc(label)}</label><select id="${id}" data-path="${id}" class="btn" style="width:100%">
+      ${opts.map(([v,t])=>`<option value="${v}" ${val===v?"selected":""}>${esc(t)}</option>`).join("")}</select></div>`;
+  }
   if(kind==="img"){
     return `<div class="field"><label>${esc(label)}</label><div class="imgbox">
       ${thumb(val)}
@@ -581,7 +605,8 @@ function listHTML(key){
       <button class="btn small" data-dup="${key}.${i}">Copy</button>
       <button class="btn small danger" data-del="${key}.${i}">Remove</button></div></div>`;
   }).join("");
-  return items+`<button class="btn small" data-add="${key}">+ Add ${def.label}</button>`;
+  const multi=key==="gallery"?`<label class="btn small primary" style="display:inline-block;margin:0 0 10px">+ Add several photos at once<input type="file" accept="image/*" multiple hidden data-multi="gallery"></label>`:"";
+  return multi+items+`<button class="btn small" data-add="${key}">+ Add ${def.label}</button>`;
 }
 let openState={};
 function renderForm(){
@@ -598,6 +623,16 @@ function setPath(path,val){const p=path.split(".");if(p.length===1)data[p[0]]=va
 
 $("#form").addEventListener("input",e=>{const p=e.target.dataset.path;if(!p)return;setPath(p,e.target.value);renderPreview();save()});
 $("#form").addEventListener("change",async e=>{
+  if(e.target.dataset.multi){
+    const files=[...e.target.files];if(!files.length)return;
+    // Fill empty photo slots first, then add new ones.
+    for(let n=0;n<files.length;n++){
+      setStatus(`Adding photo ${n+1} of ${files.length}...`);
+      try{const ref=addLocalImage(await readImage(files[n]));
+        const slot=data.gallery.find(g=>!g.img);if(slot)slot.img=ref;else data.gallery.push({img:ref,cap:""});}catch(err){}
+    }
+    renderForm();renderPreview();save();return;
+  }
   const p=e.target.dataset.img;if(!p||!e.target.files[0])return;
   setStatus("Adding photo...");
   try{setPath(p,addLocalImage(await readImage(e.target.files[0])));}catch(err){alert("Sorry, that photo could not be read. Try a JPG or PNG.");return}
@@ -621,11 +656,12 @@ function orderRows(items){
   return items.map(it=>`<tr><td class="lbl">${ph(it.lbl,"Item")}</td><td class="det">${esc(it.det)}</td><td class="by">${ph(it.by,"Name")}</td></tr>`).join("");
 }
 function nameList(t,label){const l=lines(t);return l.length?l.map(esc).join("<br>"):`<span class="ph">[${esc(label)}]</span>`}
-function page(label,inner,cls=""){return `<div class="page-wrap"><div class="page-label">${label}</div><div class="page ${cls}">${inner}</div></div>`}
+let pageNo=0;
+function page(label,inner,cls=""){label=`Page ${++pageNo} · `+label.replace(/^Page \d+ · /,"");return `<div class="page-wrap"><div class="page-label">${label}</div><div class="page ${cls}">${inner}</div></div>`}
 
 function renderPreview(){
   const d=data, nm=ph(d.fullName,"Her full name");
-  const P=[];
+  const P=[];pageNo=0;
   // 1 Cover
   P.push(page("Page 1 · Front cover",`<div class="cover">
     <div class="pre">${ph(d.coverTitle,"Cover heading")}</div>
@@ -658,9 +694,13 @@ function renderPreview(){
     <div class="two-col">${fam}</div>
     ${d.predeceased?`<h3>Predeceased by</h3><p class="center">${esc(d.predeceased).replace(/\n/g,"<br>")}</p>`:""}`));
   // 5 Gallery
-  const g=d.gallery.length?d.gallery:[{img:"",cap:""}];
-  P.push(page("Page 5 · Photo Gallery",`<h2>${ph(d.galleryTitle,"Gallery heading")}</h2><div class="flourish">&#10022; &#10022; &#10022;</div>
-    <div class="gallery ${g.length===1?"n1":""}">${g.map((p,i)=>`<figure>${imgOr(p.img,"","Photo "+(i+1))}<figcaption>${esc(p.cap)}</figcaption></figure>`).join("")}</div>`));
+  const g=d.gallery.length?d.gallery:[{img:"",cap:""}], per=perPage();
+  for(let s0=0;s0<g.length;s0+=per){
+    const tiles=g.slice(s0,s0+per).map((p,j)=>{const i=s0+j,t=galleryTile(i);
+      return `<figure style="grid-column:span ${t.c};grid-row:span ${t.r}">${imgOr(p.img,"tile","Photo "+(i+1))}${p.cap?`<figcaption>${esc(p.cap)}</figcaption>`:""}</figure>`}).join("");
+    P.push(page("Photo Gallery",`<h2>${ph(d.galleryTitle,"Gallery heading")}</h2><div class="flourish">&#10022; &#10022; &#10022;</div>
+      <div class="gallery ${d.galleryLayout==="grid"?"grid":"collage"}">${tiles}</div>`));
+  }
   // 6 Hymns & poem
   const hy=d.hymns.map(h=>`<div class="hymn"><div class="ht">${ph(h.t,"Hymn title")}</div>${h.s?`<div class="hs">${esc(h.s)}</div>`:""}
     <div class="hb">${h.b&&h.b.trim()?esc(h.b.trim()):`<span class="ph">[Hymn words]</span>`}</div></div>`).join("");
