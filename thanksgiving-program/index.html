@@ -57,6 +57,17 @@ details.sec>summary .pg{font-weight:400;color:#888;font-size:12px}
 .adj-frame img{pointer-events:none;-webkit-user-drag:none}
 .mbox .zoom{display:flex;gap:8px;align-items:center;font-size:13px;margin:0 0 12px}.mbox .zoom input{flex:1}
 .mbox .row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.mbox.wide{width:min(720px,100%)}
+.pick-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin:0 0 14px;text-align:left}
+.pick{border:2px solid var(--uiline);border-radius:10px;overflow:hidden;background:#fafafa}
+.pick.on{border-color:var(--accent)}
+.pick .ph-wrap{position:relative;aspect-ratio:1;cursor:pointer}
+.pick img{width:100%;height:100%;object-fit:cover;display:block}
+.pick:not(.on) img{opacity:.35}
+.pick .chk{position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;background:#fff;border:2px solid #999;display:grid;place-items:center;font-weight:700;color:#fff}
+.pick.on .chk{background:var(--accent);border-color:var(--accent)}
+.pick select{width:100%;border:0;border-top:1px solid var(--uiline);padding:7px;font:13px Lato,sans-serif;background:#fff}
+.pick-count{font-size:13px;color:#5b6470;margin:0 0 10px}
 .imgbox .empty{width:56px;height:56px;border:1px dashed #bbb;border-radius:6px;display:grid;place-items:center;font-size:10px;color:#999}
 .list-item{border:1px solid var(--uiline);border-radius:8px;padding:8px;margin:0 0 8px;background:#fafafa}
 .list-item .grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
@@ -172,6 +183,8 @@ body.hide-ph .ph{background:none;border:none;color:transparent}
       <div class="row">
         <button class="btn primary" onclick="window.print()">Print / Save PDF</button>
         <button class="btn" onclick="syncNow()">Sync now</button>
+        <button class="btn primary" onclick="$('#multiIn').click()">Add photos</button>
+        <input type="file" id="multiIn" accept="image/*" multiple hidden>
         <button class="btn" onclick="exportData()">Download backup</button>
         <button class="btn" onclick="document.getElementById('importFile').click()">Restore backup</button>
         <input type="file" id="importFile" accept=".json,application/json" hidden onchange="importData(this)">
@@ -199,6 +212,20 @@ body.hide-ph .ph{background:none;border:none;color:transparent}
     </div>
   </aside>
   <main class="preview"><div class="pages" id="pages"></div></main>
+</div>
+<div class="modal" id="pickModal" hidden>
+  <div class="mbox wide">
+    <h3>Choose photos for the program</h3>
+    <p>Tap a photo to keep it or skip it, then pick where each one goes.</p>
+    <div class="pick-count" id="pickCount"></div>
+    <div class="pick-grid" id="pickGrid"></div>
+    <div class="row">
+      <button class="btn" id="pickAll">Select all</button>
+      <button class="btn" id="pickNone">Select none</button>
+      <button class="btn" id="pickCancel">Cancel</button>
+      <button class="btn primary" id="pickAdd">Add selected</button>
+    </div>
+  </div>
 </div>
 <div class="modal" id="adjModal" hidden>
   <div class="mbox">
@@ -605,7 +632,7 @@ function listHTML(key){
       <button class="btn small" data-dup="${key}.${i}">Copy</button>
       <button class="btn small danger" data-del="${key}.${i}">Remove</button></div></div>`;
   }).join("");
-  const multi=key==="gallery"?`<label class="btn small primary" style="display:inline-block;margin:0 0 10px">+ Add several photos at once<input type="file" accept="image/*" multiple hidden data-multi="gallery"></label>`:"";
+  const multi=key==="gallery"?`<button class="btn small primary" style="margin:0 0 10px" onclick="event.preventDefault();$('#multiIn').click()">+ Add several photos at once</button>`:"";
   return multi+items+`<button class="btn small" data-add="${key}">+ Add ${def.label}</button>`;
 }
 let openState={};
@@ -623,21 +650,45 @@ function setPath(path,val){const p=path.split(".");if(p.length===1)data[p[0]]=va
 
 $("#form").addEventListener("input",e=>{const p=e.target.dataset.path;if(!p)return;setPath(p,e.target.value);renderPreview();save()});
 $("#form").addEventListener("change",async e=>{
-  if(e.target.dataset.multi){
-    const files=[...e.target.files];if(!files.length)return;
-    // Fill empty photo slots first, then add new ones.
-    for(let n=0;n<files.length;n++){
-      setStatus(`Adding photo ${n+1} of ${files.length}...`);
-      try{const ref=addLocalImage(await readImage(files[n]));
-        const slot=data.gallery.find(g=>!g.img);if(slot)slot.img=ref;else data.gallery.push({img:ref,cap:""});}catch(err){}
-    }
-    renderForm();renderPreview();save();return;
-  }
   const p=e.target.dataset.img;if(!p||!e.target.files[0])return;
   setStatus("Adding photo...");
   try{setPath(p,addLocalImage(await readImage(e.target.files[0])));}catch(err){alert("Sorry, that photo could not be read. Try a JPG or PNG.");return}
   renderForm();renderPreview();save();openAdjust(p);
 });
+/* ---- Photo picker: choose many photos, then keep/skip each and pick where it goes ---- */
+const PLACES=[["collage","Collage"],["coverPhoto","Front cover"],["sketchPhoto","Beside life sketch"],["backPhoto","Back cover"]];
+let picks=[];
+$("#multiIn").addEventListener("change",async e=>{
+  const files=[...e.target.files];e.target.value="";if(!files.length)return;
+  picks=[];
+  for(let n=0;n<files.length;n++){
+    setStatus(`Loading photo ${n+1} of ${files.length}...`);
+    try{picks.push({d:await readImage(files[n]),on:true,place:"collage"})}catch(err){}
+  }
+  setStatus("Choose which photos to use.");
+  if(picks.length) renderPicks(), $("#pickModal").hidden=false;
+});
+function renderPicks(){
+  $("#pickGrid").innerHTML=picks.map((p,i)=>`<div class="pick ${p.on?"on":""}"><div class="ph-wrap" data-tog="${i}"><img src="${p.d}" alt=""><div class="chk">${p.on?"&#10003;":""}</div></div>
+    <select data-place="${i}">${PLACES.map(([v,t])=>`<option value="${v}" ${p.place===v?"selected":""}>${t}</option>`).join("")}</select></div>`).join("");
+  const n=picks.filter(p=>p.on).length;$("#pickCount").textContent=`${n} of ${picks.length} selected`;$("#pickAdd").textContent=n?`Add ${n} photo${n>1?"s":""}`:"Add selected";
+}
+$("#pickGrid").addEventListener("click",e=>{const t=e.target.closest("[data-tog]");if(!t)return;const p=picks[+t.dataset.tog];p.on=!p.on;renderPicks()});
+$("#pickGrid").addEventListener("change",e=>{const i=e.target.dataset.place;if(i==null)return;picks[+i].place=e.target.value;picks[+i].on=true;renderPicks()});
+$("#pickAll").onclick=()=>{picks.forEach(p=>p.on=true);renderPicks()};
+$("#pickNone").onclick=()=>{picks.forEach(p=>p.on=false);renderPicks()};
+$("#pickCancel").onclick=()=>{picks=[];$("#pickModal").hidden=true;setStatus("No photos added.")};
+$("#pickAdd").onclick=()=>{
+  const chosen=picks.filter(p=>p.on);if(!chosen.length){alert("Tap at least one photo, or press Cancel.");return}
+  for(const p of chosen){
+    const ref=addLocalImage(p.d);
+    if(p.place==="collage"){const slot=data.gallery.find(g=>!g.img);if(slot)slot.img=ref;else data.gallery.push({img:ref,cap:""})}
+    else setPath(p.place,ref);
+  }
+  picks=[];$("#pickModal").hidden=true;renderForm();renderPreview();save();
+  setStatus(`Added ${chosen.length} photo${chosen.length>1?"s":""}. Tap Adjust on any photo to position it.`);
+};
+
 $("#form").addEventListener("click",e=>{
   const t=e.target.closest("button");if(!t)return;
   const d=t.dataset;
