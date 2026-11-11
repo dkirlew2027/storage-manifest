@@ -134,6 +134,11 @@ body.theme-garden .cover .pre{letter-spacing:5px;font-weight:600}
 .oos td.lbl{font-weight:700;white-space:nowrap;width:40%;color:var(--deep)}
 .oos td.det{font-style:italic}
 .oos td.by{text-align:right;width:34%}
+.oos tr{break-inside:avoid}
+.oos tr.words td{padding:0 4px 8px 18px}
+.sw{columns:2;column-gap:.3in;font-size:11pt;line-height:1.25;white-space:pre-wrap;font-style:italic;color:var(--ink);break-inside:avoid}
+.trib-title{font-family:"Great Vibes",cursive;font-weight:400;text-transform:none;font-size:40pt;letter-spacing:0;margin:4px 0 0}
+.trib-by{text-align:center;text-transform:uppercase;letter-spacing:2px;font-size:12pt;color:var(--deep)}
 .oos tr.headrow td{padding-top:10px;text-align:center;color:var(--accent);text-transform:uppercase;letter-spacing:2px;font-weight:700;font-size:11.5pt}
 /* life sketch */
 .sketch p{margin:0 0 10px;text-align:justify}
@@ -330,7 +335,11 @@ const DEFAULTS = {
     {t:"", s:"Recessional Hymn", b:""}
   ],
   poemTitle:"", poemText:"", poemBy:"",
-  pallbearers:"", flowerBearers:"", ushers:"",
+  pallbearers:"", pallbearers2:"", flowerBearers:"", ushers:"",
+  birthLabel:"Sunrise", deathLabel:"Sunset", viewing:"",
+  tributesTitle:"Tributes",
+  tributes:[{title:"Tribute to Mom", by:"", img:"", text:""}],
+  choruses:[{t:"I Know Where I Am Going",b:""},{t:"Streets of Glory",b:""},{t:"Some Sweet Day",b:""},{t:"Meet Me by the River",b:""},{t:"We Shall Have a New Name",b:""},{t:"I'll Fly Away",b:""}],
   ackText:"The family of the late [Name] wishes to express sincere thanks and appreciation for every prayer, phone call, visit, card, floral tribute and act of kindness shown during our time of bereavement. May God richly bless you.",
   ackFrom:"The Family",
   repast:"", backVerse:"\"Precious in the sight of the LORD is the death of his saints.\" Psalm 116:15",
@@ -346,13 +355,15 @@ const SECTIONS = [
     ["coverTitle","Cover heading"],
     ["fullName","Full name","e.g. Mrs. Ivy May Brown"],
     ["nickname","Affectionately known as","optional, e.g. Mama Ivy, Granny"],
-    ["birthDate","Sunrise (date of birth)","e.g. March 3, 1932"],
-    ["deathDate","Sunset (date of passing)"],
+    ["birthLabel","Word above birth date","e.g. Sunrise, Bloomed, Born"],
+    ["birthDate","Date of birth","e.g. March 3, 1932"],
+    ["deathLabel","Word above date of passing","e.g. Sunset, Faded, Called home"],
+    ["deathDate","Date of passing"],
     ["coverVerse","Verse or quote on cover","",true],
     ["coverPhoto","Cover photo","",false,"img"]
   ]},
   {title:"Service details", page:"Pages 1 & 2", fields:[
-    ["serviceDate","Date of service"],["serviceTime","Time","e.g. 11:00 a.m."],
+    ["serviceDate","Date of service"],["serviceTime","Time","e.g. 11:00 a.m."],["viewing","Viewing","optional, e.g. Viewing at 10:00 a.m."],
     ["church","Church name"],["churchAddress","Church address / district, parish"],
     ["officiating","Officiating Minister"],["moderator","Moderator / Presiding"],
     ["musician","Musician / Organist"],["funeralHome","Funeral home"],
@@ -368,10 +379,13 @@ const SECTIONS = [
   {title:"Family", page:"Page 4", fields:[["familyIntro","Opening line","e.g. She leaves to cherish her memory / Left to mourn"]], list:"family",
    after:[["predeceased","Predeceased by","optional, e.g. her husband, a son",true]]},
   {title:"Photo Gallery / Collage", page:"Page 5+", fields:[["galleryTitle","Gallery heading"],["galleryLayout","Layout","",false,"select:collage=Collage (mixed sizes, 7 photos per page)|grid=Grid (even boxes, 6 per page)"]], list:"gallery"},
+  {title:"Written Tributes", page:"one page each", fields:[["tributesTitle","Heading for the first tribute page"]], list:"tributes"},
   {title:"Hymns & Poem", page:"Page 6", list:"hymns",
    after:[["poemTitle","Poem or tribute title","optional"],["poemText","Poem or tribute text","Use an original family poem or one you have permission to print",true],["poemBy","Written by","optional"]]},
+  {title:"Graveside Choruses", page:"Graveside page", list:"choruses"},
   {title:"Pallbearers & Helpers", page:"Page 7", fields:[
-    ["pallbearers","Pallbearers","one name per line",true],
+    ["pallbearers","Pallbearers (church to hearse)","one name per line, e.g. Christopher Ellis (Son)",true],
+    ["pallbearers2","Pallbearers (hearse to graveside)","optional, one name per line",true],
     ["flowerBearers","Flower bearers","one name per line",true],
     ["ushers","Ushers","one name per line",true]
   ]},
@@ -384,8 +398,10 @@ const SECTIONS = [
 ];
 
 const LIST_DEF = {
-  order:{label:"service item", cols:[["lbl","Item"],["det","Detail (hymn, scripture)"],["by","Led by / name",true]], blank:{lbl:"",det:"",by:""}},
-  graveside:{label:"graveside item", cols:[["lbl","Item"],["det","Detail"],["by","Led by",true]], blank:{lbl:"",det:"",by:""}},
+  order:{label:"service item", cols:[["lbl","Item"],["det","Detail (song title, scripture)"],["by","Led by / name",true],["w","Song words (optional, printed under this line)",true,"ta"]], blank:{lbl:"",det:"",by:"",w:""}},
+  graveside:{label:"graveside item", cols:[["lbl","Item"],["det","Detail"],["by","Led by",true],["w","Song words (optional, printed under this line)",true,"ta"]], blank:{lbl:"",det:"",by:"",w:""}},
+  tributes:{label:"written tribute", cols:[["title","Title (e.g. Husband, Tribute to Mom)"],["by","Written by"],["img","Photo of the writer (optional)",true,"img"],["text","Tribute text (blank line between paragraphs)",true,"ta"]], blank:{title:"",by:"",img:"",text:""}},
+  choruses:{label:"chorus", cols:[["t","Chorus title",true],["b","Words",true,"ta"]], blank:{t:"",b:""}},
   family:{label:"family group", cols:[["grp","Group (e.g. Children)"],["names","Names, one per line",true,"ta"]], blank:{grp:"",names:""}},
   gallery:{label:"photo", cols:[["img","Photo",true,"img"],["cap","Caption",true]], blank:{img:"",cap:""}},
   hymns:{label:"hymn or reading", cols:[["t","Title"],["s","Used for (e.g. Opening Hymn)"],["b","Words (one line per line, blank line between verses)",true,"ta"]], blank:{t:"",s:"",b:""}}
@@ -657,6 +673,7 @@ function listHTML(key){
       <button class="btn small" data-dup="${key}.${i}">Copy</button>
       <button class="btn small danger" data-del="${key}.${i}">Remove</button></div></div>`;
   }).join("");
+  if(key==="hymns") return items+`<button class="btn small" data-add="hymns">+ Add hymn or reading</button> <button class="btn small" data-samplesongs="1">+ Add the songs from the Ellis sample</button>`;
   const multi=key==="gallery"?`<button class="btn small primary" style="margin:0 0 10px" onclick="event.preventDefault();$('#multiIn').click()">+ Add several photos at once</button>`:"";
   return multi+items+`<button class="btn small" data-add="${key}">+ Add ${def.label}</button>`;
 }
@@ -718,6 +735,7 @@ $("#form").addEventListener("click",e=>{
   const t=e.target.closest("button");if(!t)return;
   const d=t.dataset;
   if(d.adjust){openAdjust(d.adjust);e.preventDefault();return}
+  if(d.samplesongs){data.hymns.push(...SAMPLE_SONGS.map(x=>({...x})));e.preventDefault();renderForm();renderPreview();save();return}
   else if(d.clearimg){setPath(d.clearimg,"")}
   else if(d.add){data[d.add].push(structuredClone(LIST_DEF[d.add].blank))}
   else if(d.del){const[k,i]=d.del.split(".");if(!confirm("Remove this item?"))return;data[k].splice(+i,1)}
@@ -727,9 +745,18 @@ $("#form").addEventListener("click",e=>{
   e.preventDefault();renderForm();renderPreview();save();
 });
 
+// Song titles from the Ellis sample program. Words are left for the family to paste in,
+// except the public-domain "When the Roll Is Called Up Yonder" (James M. Black, 1893).
+const SAMPLE_SONGS=[
+  {t:"Jesus Is Coming Soon",s:"Opening Song",b:""},
+  {t:"In the Great Triumphant Morning",s:"Offertory Hymn",b:""},
+  {t:"Rooted and Grounded",s:"Recessional Song",b:""},
+  {t:"When the Roll Is Called Up Yonder",s:"At the Graveside",b:"When the trumpet of the Lord shall sound, and time shall be no more,\nAnd the morning breaks, eternal, bright and fair;\nWhen the saved of earth shall gather over on the other shore,\nAnd the roll is called up yonder, I'll be there.\n\nRefrain:\nWhen the roll is called up yonder,\nWhen the roll is called up yonder,\nWhen the roll is called up yonder,\nWhen the roll is called up yonder, I'll be there.\n\nOn that bright and cloudless morning when the dead in Christ shall rise,\nAnd the glory of His resurrection share;\nWhen His chosen ones shall gather to their home beyond the skies,\nAnd the roll is called up yonder, I'll be there.\n\nLet us labor for the Master from the dawn till setting sun,\nLet us talk of all His wondrous love and care;\nThen when all of life is over, and our work on earth is done,\nAnd the roll is called up yonder, I'll be there."}
+];
 /* ======================= Preview ======================= */
 function orderRows(items){
-  return items.map(it=>`<tr><td class="lbl">${ph(it.lbl,"Item")}</td><td class="det">${esc(it.det)}</td><td class="by">${ph(it.by,"Name")}</td></tr>`).join("");
+  return items.map(it=>`<tr><td class="lbl">${ph(it.lbl,"Item")}</td><td class="det">${esc(it.det)}</td><td class="by">${ph(it.by,"Name")}</td></tr>`+
+    (it.w&&it.w.trim()?`<tr class="words"><td colspan="3"><div class="sw">${esc(it.w.trim())}</div></td></tr>`:"")).join("");
 }
 function nameList(t,label){const l=lines(t);return l.length?l.map(esc).join("<br>"):`<span class="ph">[${esc(label)}]</span>`}
 let pageNo=0;
@@ -769,10 +796,10 @@ function renderPreview(){
     ${imgOr(d.coverPhoto,"photo","Cover photo")}
     ${coverName(d.fullName)}
     ${d.nickname?`<div class="nick">Affectionately known as "${esc(d.nickname)}"</div>`:`<div class="nick"><span class="ph">[Affectionately known as, optional]</span></div>`}
-    <div class="dates"><div><b>Sunrise</b>${ph(d.birthDate,"Date of birth")}</div><div><b>Sunset</b>${ph(d.deathDate,"Date of passing")}</div></div>
+    <div class="dates"><div><b>${esc(d.birthLabel||"Sunrise")}</b>${ph(d.birthDate,"Date of birth")}</div><div><b>${esc(d.deathLabel||"Sunset")}</b>${ph(d.deathDate,"Date of passing")}</div></div>
     <div class="verse">${ph(d.coverVerse,"Verse")}</div>
     <div class="svc">${ph(d.serviceDate,"Date")} at ${ph(d.serviceTime,"Time")}<br>
-      <b>${ph(d.church,"Church name")}</b><br>${ph(d.churchAddress,"Church address")}</div>
+      <b>${ph(d.church,"Church name")}</b><br>${ph(d.churchAddress,"Church address")}${d.viewing?`<br><i>${esc(d.viewing)}</i>`:""}</div>
   </div>`,"cover-page"));
   // 2 Order of service
   P.push(page("Page 2 · Order of Service",`<h2>Order of Service</h2><div class="flourish">&#10022; &#10022; &#10022;</div>
@@ -794,6 +821,13 @@ function renderPreview(){
     <p class="center" style="font-style:italic;margin-top:0">${ph(d.familyIntro,"Opening line")}</p>
     <div class="two-col">${fam}</div>
     ${d.predeceased?`<h3>Predeceased by</h3><p class="center">${esc(d.predeceased).replace(/\n/g,"<br>")}</p>`:""}`));
+  // Written tributes: one page each (a long one continues onto the next printed page)
+  (d.tributes||[]).forEach((t,i)=>{
+    P.push(page("Tribute",`${i===0&&d.tributesTitle?`<div class="center small" style="letter-spacing:3px;text-transform:uppercase;color:var(--accent)">${esc(d.tributesTitle)}</div>`:""}
+      <h2 class="script trib-title">${ph(t.title,"Tribute title")}</h2>
+      <div class="trib-by">${ph(t.by,"Written by")}</div><div class="flourish">&#10022; &#10022; &#10022;</div>
+      <div class="sketch">${t.img?imgOr(t.img,"float-photo","Photo"):""}${paras(t.text,"Tribute text")}</div>`));
+  });
   // 5 Gallery
   const g=d.gallery.length?d.gallery:[{img:"",cap:""}], per=perPage();
   for(let s0=0;s0<g.length;s0+=per){
@@ -813,8 +847,10 @@ function renderPreview(){
   P.push(page("Page 7 · Graveside",`<h2>At the Graveside</h2><div class="flourish">&#10022; &#10022; &#10022;</div>
     <p class="center" style="font-style:italic;margin-top:0">${esc(d.graveIntro)}<br><b>${ph(d.interment,"Cemetery")}</b>, ${ph(d.intermentAddress,"Location")}</p>
     <table class="oos">${orderRows(d.graveside)}</table>
-    <div class="two-col" style="margin-top:22px;columns:3">
-      <div class="fam-group"><b>Pallbearers</b>${nameList(d.pallbearers,"Names")}</div>
+    ${(d.choruses||[]).some(c=>c.t||c.b)?`<h3>Choruses</h3><div class="hymns">${d.choruses.filter(c=>c.t||c.b).map(c=>`<div class="hymn"><div class="ht">${esc(c.t)}</div><div class="hb">${c.b&&c.b.trim()?esc(c.b.trim()):`<span class="ph">[Chorus words]</span>`}</div></div>`).join("")}</div>`:""}
+    <div class="two-col" style="margin-top:22px;columns:${d.pallbearers2?4:3}">
+      <div class="fam-group"><b>Pallbearers${d.pallbearers2?" (Church to Hearse)":""}</b>${nameList(d.pallbearers,"Names")}</div>
+      ${d.pallbearers2?`<div class="fam-group"><b>Pallbearers (Hearse to Graveside)</b>${nameList(d.pallbearers2,"Names")}</div>`:""}
       <div class="fam-group"><b>Flower Bearers</b>${nameList(d.flowerBearers,"Names")}</div>
       <div class="fam-group"><b>Ushers</b>${nameList(d.ushers,"Names")}</div>
     </div>`));
@@ -830,8 +866,23 @@ function renderPreview(){
     <div class="credit">${d.funeralHome?`Arrangements by ${esc(d.funeralHome)}`:`<span class="ph">[Funeral home]</span>`}</div>
   </div>`));
   $("#pages").innerHTML=P.join("");
-  fitPreview();
+  fitPreview();snapPages();
 }
+// A page with more content than fits grows to a whole number of Letter pages, so the
+// overflow prints on a full page with the background and frame instead of a bare sheet.
+function snapPages(){
+  document.querySelectorAll(".page").forEach(el=>{
+    el.style.minHeight="";
+    // Measure the real content only (the corner flowers hang past the edge on purpose).
+    let bottom=0;
+    for(const c of el.children){ if(c.classList.contains("flora")) continue; bottom=Math.max(bottom,c.offsetTop+c.offsetHeight) }
+    const inches=bottom/el.clientWidth*8.5+0.6;
+    const n=Math.max(1,Math.ceil(inches/11-0.02));
+    if(n>1) el.style.minHeight=(n*11)+"in";
+  });
+}
+window.addEventListener("beforeprint",snapPages);
+if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>snapPages());
 function fitPreview(){
   const pv=$(".preview"); if(!pv.clientWidth) return;
   const w=Math.min(pv.clientWidth, window.innerWidth)-20, pageW=8.5*96+8;
