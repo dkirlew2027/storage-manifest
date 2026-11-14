@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Funeral Cost Share</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: one calm column. Summary first, then the flowchart, then the calculator, then the worked steps. */
+:root {
+  --bg: #f2f5f4;
+  --surface: #ffffff;
+  --ink: #1b2523;
+  --muted: #5a6965;
+  --line: #d3dbd8;
+  --accent: #2c5f55;
+  --accent-soft: #e1eeea;
+  --warn: #8f5410;
+  --warn-soft: #fbefdc;
+  --font-display: "Newsreader", Georgia, "Times New Roman", serif;
+  --font-body: "Public Sans", -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141a19;
+    --surface: #1d2625;
+    --ink: #e8eeec;
+    --muted: #9baaa6;
+    --line: #34413e;
+    --accent: #84c8b7;
+    --accent-soft: #22342f;
+    --warn: #e6b56c;
+    --warn-soft: #3a2e1a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141a19;
+  --surface: #1d2625;
+  --ink: #e8eeec;
+  --muted: #9baaa6;
+  --line: #34413e;
+  --accent: #84c8b7;
+  --accent-soft: #22342f;
+  --warn: #e6b56c;
+  --warn-soft: #3a2e1a;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+}
+main {
+  max-width: 620px;
+  margin: 0 auto;
+  padding: 28px 16px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+h1, h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: 1.15;
+  margin: 0;
+  text-wrap: balance;
+}
+h1 { font-size: 2rem; }
+h2 { font-size: 1.35rem; }
+p { margin: 0; }
+.lede { color: var(--muted); margin-top: 8px; max-width: 60ch; }
+section { display: flex; flex-direction: column; gap: 12px; }
+
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.tile {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.tile .label { font-size: 0.8rem; color: var(--muted); }
+.tile .value {
+  font-size: 1.3rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.tile.status.ok .value { color: var(--accent); }
+.tile.status.short .value { color: var(--warn); }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px 14px;
+}
+
+/* Flowchart */
+.flow { display: flex; justify-content: center; }
+.flow svg { width: 100%; max-width: 420px; height: auto; display: block; }
+.flow .box { fill: var(--bg); stroke: var(--line); stroke-width: 1.5; }
+.flow .decision { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; }
+.flow .done { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; }
+.flow text { fill: var(--ink); font-family: var(--font-body); font-size: 13px; text-anchor: middle; }
+.flow text.branch { fill: var(--muted); font-weight: 600; font-size: 12px; }
+.flow .wire { fill: none; stroke: var(--muted); stroke-width: 1.5; }
+.flow .head { fill: var(--muted); }
+
+/* Calculator */
+.controls { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.field > span, .colhead { font-size: 0.8rem; color: var(--muted); }
+.money {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  min-width: 0;
+}
+.money > span { padding-left: 10px; color: var(--muted); }
+input {
+  font: inherit;
+  color: var(--ink);
+  background: transparent;
+  border: 0;
+  width: 100%;
+  min-width: 0;
+  padding: 9px 10px;
+  font-variant-numeric: tabular-nums;
+}
+.money input { padding-left: 4px; }
+input.name { border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
+input::placeholder { color: var(--muted); opacity: 0.8; }
+input:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.money:focus-within { border-color: var(--accent); }
+
+.stepper {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  overflow: hidden;
+}
+.stepper button {
+  font: inherit;
+  font-size: 1.2rem;
+  width: 44px;
+  height: 42px;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+}
+.stepper output { flex: 1; text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.grid3 {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) 96px;
+  gap: 8px;
+  align-items: center;
+}
+.colhead.right { text-align: right; }
+ul.rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.pays { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.pays output { font-weight: 600; font-variant-numeric: tabular-nums; }
+.pill {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  white-space: nowrap;
+}
+.pill.limit { background: var(--warn-soft); color: var(--warn); }
+
+.note { font-size: 0.85rem; color: var(--muted); }
+.alert {
+  background: var(--warn-soft);
+  color: var(--warn);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+.alert[hidden] { display: none; }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.btn {
+  font: inherit;
+  font-weight: 600;
+  padding: 9px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--accent);
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+}
+.btn.primary { background: var(--accent); color: var(--surface); }
+.stack { display: flex; flex-direction: column; gap: 14px; }
+.sync { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin-top: 10px; font-size: 0.85rem; color: var(--muted); }
+.sync button { font: inherit; font-weight: 600; color: var(--accent); background: none; border: 0; padding: 0; text-decoration: underline; cursor: pointer; }
+
+ol.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 8px; }
+ol.steps li { font-variant-numeric: tabular-nums; }
+ol.steps strong { font-weight: 600; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Funeral Cost Share</h1>
+    <p class="lede">Everyone starts with an even share. If someone gives less or more than that, their amount comes off the total and the rest is split again among everyone else.</p>
+    <p class="sync"><span id="status" role="status">Loading the family copy...</span><button type="button" id="sync">Sync now</button></p>
+  </header>
+
+  <section aria-label="Summary">
+    <div class="tiles">
+      <div class="tile"><span class="label">Total cost</span><span class="value" id="t-total">$8,090.00</span></div>
+      <div class="tile"><span class="label">Even share to start</span><span class="value" id="t-even">$809.00</span></div>
+      <div class="tile"><span class="label">Share for everyone else</span><span class="value" id="t-full">$864.62</span></div>
+      <div class="tile status ok" id="t-status-tile"><span class="label">Status</span><span class="value" id="t-status">Fully covered</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>How the split works</h2>
+    <div class="card flow">
+      <svg viewBox="0 0 360 492" role="img" aria-label="Flowchart: start with the total and everyone contributing. Divide the balance left by the people left to get an even share. If everyone left is good with that share, they each pay it and the cost is covered. If not, anyone giving less or more sets their amount, that amount comes off the balance, they leave the count, and the share is worked out again.">
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path class="head" d="M0 0 L10 5 L0 10 z"></path>
+          </marker>
+        </defs>
+
+        <rect class="box" x="40" y="8" width="280" height="52" rx="10"></rect>
+        <text x="180" y="30">Start with the total cost and</text>
+        <text x="180" y="47">everyone who is contributing</text>
+
+        <path class="wire" d="M180 60 V82" marker-end="url(#arrow)"></path>
+
+        <rect class="box" x="40" y="84" width="280" height="52" rx="10"></rect>
+        <text x="180" y="106">Even share =</text>
+        <text x="180" y="123">balance left ÷ people left</text>
+
+        <path class="wire" d="M180 136 V158" marker-end="url(#arrow)"></path>
+
+        <path class="decision" d="M180 160 L290 220 L180 280 L70 220 Z"></path>
+        <text x="180" y="216">Is everyone left good</text>
+        <text x="180" y="233">with that share?</text>
+
+        <path class="wire" d="M180 280 V316" marker-end="url(#arrow)"></path>
+        <text class="branch" x="196" y="302">No</text>
+
+        <rect class="box" x="40" y="318" width="280" height="84" rx="10"></rect>
+        <text x="180" y="343">Anyone giving less or more sets their</text>
+        <text x="180" y="360">amount. Take it off the balance and</text>
+        <text x="180" y="377">take them out of the count. Split again.</text>
+
+        <path class="wire" d="M40 360 H16 V110 H38" marker-end="url(#arrow)"></path>
+
+        <path class="wire" d="M290 220 H344 V456 H322" marker-end="url(#arrow)"></path>
+        <text class="branch" x="316" y="212">Yes</text>
+
+        <rect class="done" x="40" y="430" width="280" height="52" rx="10"></rect>
+        <text x="180" y="452">Everyone left pays the even share.</text>
+        <text x="180" y="469">The cost is covered.</text>
+      </svg>
+    </div>
+  </section>
+
+  <section>
+    <h2>Calculator</h2>
+    <div class="card stack">
+      <div class="controls">
+        <label class="field">
+          <span>Total cost</span>
+          <div class="money"><span>$</span><input id="total" inputmode="decimal" autocomplete="off" value="8090"></div>
+        </label>
+        <div class="field">
+          <span id="people-label">People contributing</span>
+          <div class="stepper" role="group" aria-labelledby="people-label">
+            <button type="button" id="minus" aria-label="Remove a person">−</button>
+            <output id="count">10</output>
+            <button type="button" id="plus" aria-label="Add a person">+</button>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="grid3" style="margin-bottom:6px">
+          <span class="colhead">Name</span>
+          <span class="colhead">Their amount</span>
+          <span class="colhead right">Pays</span>
+        </div>
+        <ul class="rows" id="rows"></ul>
+      </div>
+
+      <p class="note">Leave the middle box empty for anyone paying an even share. Enter an amount for anyone giving less or more, and everyone else's share adjusts. Amounts are rounded to the cent, so a few people may pay one cent more to make it add up exactly.</p>
+
+      <div class="alert" id="alert" hidden></div>
+
+      <div class="actions">
+        <button type="button" class="btn primary" id="copy">Copy summary</button>
+        <button type="button" class="btn" id="clear">Clear amounts</button>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Step by step</h2>
+    <div class="card">
+      <ol class="steps" id="steps"></ol>
+    </div>
+  </section>
+</main>
+
+<script>
+(function () {
+  // SHARED = true: one copy for the whole family, kept in Pantry (free JSON storage,
+  // https://getpantry.cloud), the same store the casket-poll and thanksgiving-program pages use.
+  // Only the fields this device changed are written (read, apply changes, write back), so two
+  // people editing different rows do not overwrite each other. Pantry allows about 2 calls per
+  // second for the whole store, so calls are queued.
+  var SHARED = true;
+  var PANTRY_ID = 'e8583fad-b7fb-4294-8464-a553fbf333c5';
+  var BASKET_URL = 'https://getpantry.cloud/apiv1/pantry/' + PANTRY_ID + '/basket/cost-share';
+  var CACHE_KEY = 'cost-share-v2';
+  var MAX_PEOPLE = 30;
+  var KEYS = ['total', 'count'];
+  for (var k = 0; k < MAX_PEOPLE; k++) KEYS.push('p' + k);
+  function J(v) { return JSON.stringify(v === undefined ? null : v); }
+
+  function defaults() {
+    var d = { total: '8090', count: 10 };
+    for (var i = 0; i < 10; i++) d['p' + i] = { name: 'Person ' + (i + 1), cap: '' };
+    return d;
+  }
+
+  var data = defaults();
+  var edited = {};            // keys changed on this device and not yet on the shared copy
+  var example = !SHARED;
+  if (example) { data.p1.cap = '404.50'; data.p2.cap = '768.55'; }
+  try {
+    var saved = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+    if (saved && saved.data) { data = saved.data; edited = saved.edited || {}; example = false; }
+  } catch (e) {}
+
+  // Keep data well formed no matter what came from storage.
+  function tidy() {
+    if (typeof data.total !== 'string') data.total = data.total == null ? '' : String(data.total);
+    var c = parseInt(data.count, 10);
+    if (!(c >= 1)) c = 10;
+    if (c > MAX_PEOPLE) c = MAX_PEOPLE;
+    data.count = c;
+    for (var i = 0; i < MAX_PEOPLE; i++) {
+      var key = 'p' + i;
+      if (i < c) {
+        var p = data[key] && typeof data[key] === 'object' ? data[key] : {};
+        data[key] = {
+          name: typeof p.name === 'string' ? p.name : 'Person ' + (i + 1),
+          cap: typeof p.cap === 'string' ? p.cap : ''
+        };
+      } else {
+        data[key] = null;
+      }
+    }
+  }
+  tidy();
+
+  function cache() {
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify({ data: data, edited: edited })); } catch (e) {}
+  }
+
+  function parseMoney(str) {
+    if (str === null || str === undefined) return null;
+    var cleaned = String(str).replace(/[$,\s]/g, '');
+    if (cleaned === '') return null;
+    var v = parseFloat(cleaned);
+    if (!isFinite(v) || v < 0) return null;
+    return Math.round(v * 100);
+  }
+
+  function fmt(cents) {
+    return (Math.round(cents) / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+  }
+
+  // Anyone with an amount gives exactly that (less or more than an even share).
+  // Whatever is left is split evenly among everyone else. All amounts in cents.
+  function split(total, amounts) {
+    var n = amounts.length;
+    var pays = new Array(n).fill(0);
+    var isSet = new Array(n).fill(false);
+    var open = [];
+    var remaining = total;
+    var left = n;
+    var steps = [{ type: 'start', balance: total, count: n }];
+
+    for (var i = 0; i < n; i++) {
+      if (amounts[i] !== null) {
+        isSet[i] = true;
+        pays[i] = amounts[i];
+        remaining -= amounts[i];
+        left--;
+        steps.push({ type: 'set', who: i, amount: amounts[i], balance: remaining, count: left });
+      } else {
+        open.push(i);
+      }
+    }
+
+    var share = null, shortfall = 0, over = 0;
+    if (open.length) {
+      if (remaining >= 0) {
+        var base = Math.floor(remaining / open.length);
+        var extra = remaining - base * open.length;
+        open.forEach(function (i, idx) { pays[i] = base + (idx < extra ? 1 : 0); });
+        share = Math.round(remaining / open.length);
+      } else {
+        share = 0;
+        over = -remaining;
+      }
+    } else if (remaining > 0) {
+      shortfall = remaining;
+    } else {
+      over = -remaining;
+    }
+    return { pays: pays, isSet: isSet, steps: steps, share: share, shortfall: shortfall, over: over, open: open.length };
+  }
+
+  var rowsEl = document.getElementById('rows');
+  var totalEl = document.getElementById('total');
+  var statusEl = document.getElementById('status');
+
+  function people() {
+    var list = [];
+    for (var i = 0; i < data.count; i++) list.push(data['p' + i]);
+    return list;
+  }
+  function displayName(i) {
+    var n = (data['p' + i].name || '').trim();
+    return n || 'Person ' + (i + 1);
+  }
+  function plural(n) { return n + (n === 1 ? ' person' : ' people'); }
+
+  function buildRows() {
+    rowsEl.textContent = '';
+    people().forEach(function (p, i) {
+      var li = document.createElement('li');
+      li.className = 'grid3';
+
+      var name = document.createElement('input');
+      name.className = 'name';
+      name.id = 'name-' + i;
+      name.value = p.name;
+      name.setAttribute('aria-label', 'Name of person ' + (i + 1));
+      name.autocomplete = 'off';
+      name.addEventListener('input', function () { data['p' + i].name = name.value; mark('p' + i); });
+
+      var wrap = document.createElement('div');
+      wrap.className = 'money';
+      var sign = document.createElement('span');
+      sign.textContent = '$';
+      var cap = document.createElement('input');
+      cap.id = 'cap-' + i;
+      cap.inputMode = 'decimal';
+      cap.placeholder = 'Even';
+      cap.value = p.cap;
+      cap.autocomplete = 'off';
+      cap.setAttribute('aria-label', 'Amount person ' + (i + 1) + ' will give');
+      cap.addEventListener('input', function () { data['p' + i].cap = cap.value; mark('p' + i); });
+      wrap.appendChild(sign);
+      wrap.appendChild(cap);
+
+      var pays = document.createElement('div');
+      pays.className = 'pays';
+      var out = document.createElement('output');
+      out.id = 'pay-' + i;
+      var pill = document.createElement('span');
+      pill.className = 'pill';
+      pill.id = 'pill-' + i;
+      pays.appendChild(out);
+      pays.appendChild(pill);
+
+      li.appendChild(name);
+      li.appendChild(wrap);
+      li.appendChild(pays);
+      rowsEl.appendChild(li);
+    });
+    document.getElementById('count').textContent = data.count;
+  }
+
+  var last = null;
+
+  function update() {
+    var total = parseMoney(data.total) || 0;
+    var amounts = people().map(function (p) { return parseMoney(p.cap); });
+    var r = split(total, amounts);
+    last = { total: total, result: r };
+
+    for (var i = 0; i < data.count; i++) {
+      document.getElementById('pay-' + i).textContent = fmt(r.pays[i]);
+      var pill = document.getElementById('pill-' + i);
+      pill.textContent = r.isSet[i] ? 'Set amount' : 'Even share';
+      pill.className = 'pill' + (r.isSet[i] ? ' limit' : '');
+    }
+
+    document.getElementById('t-total').textContent = fmt(total);
+    document.getElementById('t-even').textContent = fmt(total / data.count);
+    document.getElementById('t-full').textContent = r.share === null ? 'None' : fmt(r.share);
+
+    var tile = document.getElementById('t-status-tile');
+    var alertEl = document.getElementById('alert');
+    if (r.shortfall > 0) {
+      tile.className = 'tile status short';
+      document.getElementById('t-status').textContent = 'Short ' + fmt(r.shortfall);
+      alertEl.hidden = false;
+      alertEl.textContent = 'The amounts add up to ' + fmt(r.shortfall) + ' less than the total. Someone needs to raise theirs, or leave a box empty so that person covers the rest.';
+    } else if (r.over > 0) {
+      tile.className = 'tile status short';
+      document.getElementById('t-status').textContent = 'Over ' + fmt(r.over);
+      alertEl.hidden = false;
+      alertEl.textContent = 'The amounts add up to ' + fmt(r.over) + ' more than the total. Someone can lower theirs.';
+    } else {
+      tile.className = 'tile status ok';
+      document.getElementById('t-status').textContent = 'Fully covered';
+      alertEl.hidden = true;
+    }
+
+    var note = document.getElementById('example-note');
+    if (note) note.hidden = !example;
+
+    var steps = document.getElementById('steps');
+    steps.textContent = '';
+    function addStep(lead, rest) {
+      var li = document.createElement('li');
+      var b = document.createElement('strong');
+      b.textContent = lead;
+      li.appendChild(b);
+      if (rest) li.appendChild(document.createTextNode(' ' + rest));
+      steps.appendChild(li);
+    }
+    r.steps.forEach(function (s) {
+      if (s.type === 'start') {
+        addStep(fmt(s.balance) + ' ÷ ' + plural(s.count) + ' = ' + fmt(s.balance / s.count) + ' each to start.');
+        return;
+      }
+      var lead = displayName(s.who) + ' gives ' + fmt(s.amount) + '.';
+      var rest;
+      if (s.count > 0 && s.balance > 0) {
+        rest = fmt(s.balance) + ' left ÷ ' + plural(s.count) + ' = ' + fmt(s.balance / s.count) + ' each.';
+      } else if (s.count > 0) {
+        rest = 'Nothing is left for the others to cover.';
+      } else if (s.balance > 0) {
+        rest = fmt(s.balance) + ' is still uncovered.';
+      } else if (s.balance < 0) {
+        rest = 'That is ' + fmt(-s.balance) + ' more than needed.';
+      } else {
+        rest = 'That covers the total.';
+      }
+      addStep(lead, rest);
+    });
+    if (r.open > 0) {
+      var who = r.open === data.count ? 'All ' + plural(r.open) : 'The ' + plural(r.open) + ' left';
+      var verb = r.open === 1 ? ' pays ' : ' pay ';
+      addStep(who + verb + (r.over > 0 ? 'nothing, since the amounts already cover the total.' : fmt(r.share) + ' each.'));
+    }
+  }
+
+  // Remote changes arrived: refresh the form without disturbing the box being typed in.
+  function applyRemote() {
+    if (rowsEl.children.length !== data.count) {
+      buildRows();
+    } else {
+      for (var i = 0; i < data.count; i++) {
+        var n = document.getElementById('name-' + i), c = document.getElementById('cap-' + i);
+        if (document.activeElement !== n) n.value = data['p' + i].name;
+        if (document.activeElement !== c) c.value = data['p' + i].cap;
+      }
+    }
+    if (document.activeElement !== totalEl) totalEl.value = data.total;
+    update();
+  }
+
+  /* ---------------- shared copy ---------------- */
+  var syncing = false, flushTimer = null, retryTimer = null, retryDelay = 8000;
+  var q = Promise.resolve();
+  function pause(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  function pantry(fn) {
+    var p = q.then(fn);
+    q = p.catch(function () {}).then(function () { return pause(1300); });
+    return p;
+  }
+  function getBasket() {
+    return pantry(async function () {
+      var r = await fetch(BASKET_URL + '?t=' + Date.now(), { cache: 'no-store' });
+      if (r.ok) return r.json();
+      var t = await r.text().catch(function () { return ''; });
+      if (r.status === 404 || (r.status === 400 && !/limit|too many|rate/i.test(t))) return null;
+      throw new Error('HTTP ' + r.status);
+    });
+  }
+  function postBasket(obj) {
+    return pantry(async function () {
+      var r = await fetch(BASKET_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(obj) });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+    });
+  }
+  function now() { return new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); }
+  function setStatus(t) { if (statusEl) statusEl.textContent = t; }
+  function pending() { return Object.keys(edited).length > 0; }
+
+  // One pass does everything: pull the family copy, lay this device's changes on top, write back.
+  async function sync() {
+    if (!SHARED) return;
+    if (syncing) { clearTimeout(flushTimer); flushTimer = setTimeout(sync, 1500); return; }
+    syncing = true;
+    clearTimeout(retryTimer);
+    try {
+      var remote = await getBasket();
+      var write = !remote;
+      remote = remote || {};
+      var snap = {};
+      Object.keys(edited).forEach(function (key) { snap[key] = J(data[key]); });
+      var changed = false;
+      KEYS.forEach(function (key) {
+        if (key in snap) {
+          if (J(remote[key]) !== snap[key]) { remote[key] = data[key]; write = true; }
+        } else if (key in remote) {
+          if (J(remote[key]) !== J(data[key])) { data[key] = remote[key]; changed = true; }
+        } else {
+          remote[key] = data[key];
+          if (data[key] !== null) write = true;
+        }
+      });
+      if (write) await postBasket(remote);
+      Object.keys(snap).forEach(function (key) { if (J(data[key]) === snap[key]) delete edited[key]; });
+      retryDelay = 8000;
+      if (changed) { tidy(); applyRemote(); }
+      cache();
+      if (pending()) {
+        setStatus('Saving for the family...');
+        clearTimeout(flushTimer);
+        flushTimer = setTimeout(sync, 1500);
+      } else {
+        setStatus((write ? 'Saved for the whole family at ' : 'Up to date with the family copy at ') + now());
+      }
+    } catch (e) {
+      setStatus(navigator.onLine
+        ? 'Could not reach the family copy. Saved on this device, retrying.'
+        : 'No internet. Saved on this device, will sync when back online.');
+      retryTimer = setTimeout(sync, retryDelay);
+      retryDelay = Math.min(retryDelay * 2, 120000);
+    } finally {
+      syncing = false;
+    }
+  }
+
+  // Every change goes through mark(): keep it on this device, then push to the shared copy.
+  function mark(key) {
+    example = false;
+    edited[key] = true;
+    cache();
+    update();
+    if (SHARED) {
+      setStatus('Saving for the family...');
+      clearTimeout(flushTimer);
+      flushTimer = setTimeout(sync, 1500);
+    }
+  }
+
+  /* ---------------- controls ---------------- */
+  totalEl.value = data.total;
+  totalEl.addEventListener('input', function () { data.total = totalEl.value; mark('total'); });
+
+  document.getElementById('plus').addEventListener('click', function () {
+    if (data.count >= MAX_PEOPLE) return;
+    var key = 'p' + data.count;
+    data[key] = { name: 'Person ' + (data.count + 1), cap: '' };
+    data.count++;
+    buildRows();
+    mark(key);
+    mark('count');
+  });
+  document.getElementById('minus').addEventListener('click', function () {
+    if (data.count <= 1) return;
+    data.count--;
+    var key = 'p' + data.count;
+    data[key] = null;
+    buildRows();
+    mark(key);
+    mark('count');
+  });
+
+  var clearBtn = document.getElementById('clear');
+  var clearArmed = null;
+  clearBtn.addEventListener('click', function () {
+    if (SHARED && !clearArmed) {
+      clearBtn.textContent = 'Tap again to clear for everyone';
+      clearArmed = setTimeout(function () { clearArmed = null; clearBtn.textContent = 'Clear amounts'; }, 4000);
+      return;
+    }
+    clearTimeout(clearArmed);
+    clearArmed = null;
+    clearBtn.textContent = 'Clear amounts';
+    example = false;
+    for (var i = 0; i < data.count; i++) {
+      if (data['p' + i].cap !== '') { data['p' + i].cap = ''; edited['p' + i] = true; }
+    }
+    buildRows();
+    mark('count');
+  });
+
+  var copyBtn = document.getElementById('copy');
+  copyBtn.addEventListener('click', function () {
+    if (!last) return;
+    var r = last.result;
+    var lines = ['Funeral cost share', 'Total: ' + fmt(last.total), ''];
+    for (var i = 0; i < data.count; i++) {
+      lines.push(displayName(i) + ': ' + fmt(r.pays[i]) + (r.isSet[i] ? ' (set amount)' : ''));
+    }
+    if (r.shortfall > 0) lines.push('', 'Still uncovered: ' + fmt(r.shortfall));
+    if (r.over > 0) lines.push('', 'Over the total by: ' + fmt(r.over));
+    var done = function (label) {
+      copyBtn.textContent = label;
+      setTimeout(function () { copyBtn.textContent = 'Copy summary'; }, 1800);
+    };
+    try {
+      navigator.clipboard.writeText(lines.join('\n')).then(function () { done('Copied'); }, function () { done('Could not copy'); });
+    } catch (e) {
+      done('Could not copy');
+    }
+  });
+
+  buildRows();
+  update();
+
+  if (SHARED) {
+    var syncBtn = document.getElementById('sync');
+    if (syncBtn) syncBtn.addEventListener('click', function () { setStatus('Checking the family copy...'); sync(); });
+    sync();
+    setInterval(function () { if (!document.hidden && !syncing) sync(); }, 45000);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) sync(); });
+    window.addEventListener('online', sync);
+  }
+})();
+</script>
+</body>
+</html>
