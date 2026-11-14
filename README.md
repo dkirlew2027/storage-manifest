@@ -45,7 +45,7 @@ Identification uses `claude-haiku-5-5` by default, which costs a fraction of a c
 | Folder | Purpose |
 | --- | --- |
 | `casket-poll/` | Family poll of the eight Jessup casket finishes at Haven Funeral Services. Live at https://dkirlew2027.github.io/storage-manifest/casket-poll/. Votes are stored in a free Pantry basket (getpantry.cloud; the pantry ID is in `casket-poll/index.html`), one entry per voter keyed by name, and the page refreshes the tally about once a minute. Pantry allows about 2 API calls per second and removes baskets after 30 days without activity. |
-| `cost-share/` | Family cost split for the funeral: a flowchart of the logic and a calculator. Everyone starts with an even share; anyone giving less or more enters their amount and the rest is split again among everyone else. Live at https://dkirlew2027.github.io/storage-manifest/cost-share/. One shared copy lives in the same Pantry store, in the `cost-share` basket, and the page checks it about every 45 seconds. |
+| `cost-share/` | Family cost split for the funeral: a flowchart of the logic and a calculator. Everyone starts with an even share; anyone giving less or more enters their amount and the rest is split again among everyone else. Live at https://dkirlew2027.github.io/storage-manifest/cost-share/. One shared copy lives in the same Pantry store, in the `cost-share` basket. Each save is a single merging PUT of the changed fields, calls are spaced at least 4 seconds apart (10 after a write), and open pages re-read the basket about every 2 minutes, because Pantry refuses calls that come close together. |
 
 ## Run it locally
 

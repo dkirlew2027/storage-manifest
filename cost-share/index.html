@@ -335,9 +335,8 @@ ol.steps strong { font-weight: 600; }
 (function () {
   // SHARED = true: one copy for the whole family, kept in Pantry (free JSON storage,
   // https://getpantry.cloud), the same store the casket-poll and thanksgiving-program pages use.
-  // Only the fields this device changed are written (read, apply changes, write back), so two
-  // people editing different rows do not overwrite each other. Pantry allows about 2 calls per
-  // second for the whole store, so calls are queued.
+  // Only the fields this device changed are written (a merging PUT), so two
+  // people editing different rows do not overwrite each other.
   var SHARED = true;
   var PANTRY_ID = 'e8583fad-b7fb-4294-8464-a553fbf333c5';
   var BASKET_URL = 'https://getpantry.cloud/apiv1/pantry/' + PANTRY_ID + '/basket/cost-share';
@@ -597,75 +596,92 @@ ol.steps strong { font-weight: 600; }
     update();
   }
 
-  /* ---------------- shared copy ---------------- */
-  var syncing = false, flushTimer = null, retryTimer = null, retryDelay = 8000;
+  /* ---------------- shared copy ----------------
+     Pantry refuses a call that follows another one too closely (measured Nov 14 2026: a second
+     call 1.5 s after the first is refused, and so are the next few), and a refusal looks like a
+     network failure in the browser. So: one call per save (PUT merges just the changed fields
+     and returns the whole basket), a quiet gap after every call (longer after a write, which
+     also costs a preflight), slow polling, and patient retries. */
+  var gap = 4000;
+  var syncing = false, again = false, flushTimer = null, retryTimer = null, retryDelay = 10000, lastSync = 0;
   var q = Promise.resolve();
   function pause(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
   function pantry(fn) {
     var p = q.then(fn);
-    q = p.catch(function () {}).then(function () { return pause(1300); });
+    q = p.catch(function () {}).then(function () { return pause(gap); });
     return p;
   }
-  function getBasket() {
+  // Returns the basket, or null when it does not exist yet. Throws when refused or offline.
+  function call(method, body) {
     return pantry(async function () {
-      var r = await fetch(BASKET_URL + '?t=' + Date.now(), { cache: 'no-store' });
-      if (r.ok) return r.json();
+      gap = method === 'GET' ? 4000 : 10000;
+      var opts = method === 'GET'
+        ? { cache: 'no-store' }
+        : { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) };
+      var r = await fetch(BASKET_URL + (method === 'GET' ? '?t=' + Date.now() : ''), opts);
+      if (r.ok) return method === 'POST' ? body : r.json();
       var t = await r.text().catch(function () { return ''; });
       if (r.status === 404 || (r.status === 400 && !/limit|too many|rate/i.test(t))) return null;
       throw new Error('HTTP ' + r.status);
     });
   }
-  function postBasket(obj) {
-    return pantry(async function () {
-      var r = await fetch(BASKET_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(obj) });
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-    });
+  function fullCopy() {
+    var o = {};
+    KEYS.forEach(function (key) { o[key] = data[key]; });
+    return o;
   }
   function now() { return new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }); }
   function setStatus(t) { if (statusEl) statusEl.textContent = t; }
   function pending() { return Object.keys(edited).length > 0; }
 
-  // One pass does everything: pull the family copy, lay this device's changes on top, write back.
+  // With changes waiting: send only those fields. With none: read the family copy.
   async function sync() {
     if (!SHARED) return;
-    if (syncing) { clearTimeout(flushTimer); flushTimer = setTimeout(sync, 1500); return; }
+    if (syncing) { again = true; return; }
     syncing = true;
+    again = false;
     clearTimeout(retryTimer);
+    clearTimeout(flushTimer);
+    var saving = pending();
     try {
-      var remote = await getBasket();
-      var write = !remote;
-      remote = remote || {};
-      var snap = {};
-      Object.keys(edited).forEach(function (key) { snap[key] = J(data[key]); });
+      var snap = {}, patch = {};
+      Object.keys(edited).forEach(function (key) { snap[key] = J(data[key]); patch[key] = data[key]; });
+      var remote = saving ? await call('PUT', patch) : await call('GET');
+      if (!remote) remote = await call('POST', fullCopy());   // first visit ever, or the basket expired
+
+      var rc = parseInt(remote.count, 10);
       var changed = false;
       KEYS.forEach(function (key) {
         if (key in snap) {
-          if (J(remote[key]) !== snap[key]) { remote[key] = data[key]; write = true; }
-        } else if (key in remote) {
-          if (J(remote[key]) !== J(data[key])) { data[key] = remote[key]; changed = true; }
-        } else {
-          remote[key] = data[key];
-          if (data[key] !== null) write = true;
+          if (J(data[key]) !== snap[key]) return;              // edited again while saving: keep, resend
+          delete edited[key];
+        } else if (edited[key]) {
+          return;                                              // edited while saving: keep, send next
         }
+        var has = key in remote, rv = remote[key];
+        if (key.charAt(0) === 'p' && rc >= 1 && +key.slice(1) >= rc) { has = true; rv = null; }
+        if (has && J(rv) !== J(data[key])) { data[key] = rv; changed = true; }
       });
-      if (write) await postBasket(remote);
-      Object.keys(snap).forEach(function (key) { if (J(data[key]) === snap[key]) delete edited[key]; });
-      retryDelay = 8000;
+      retryDelay = 10000;
+      lastSync = Date.now();
       if (changed) { tidy(); applyRemote(); }
       cache();
-      if (pending()) {
+      if (pending() || again) {
         setStatus('Saving for the family...');
-        clearTimeout(flushTimer);
-        flushTimer = setTimeout(sync, 1500);
+        flushTimer = setTimeout(sync, 500);
       } else {
-        setStatus((write ? 'Saved for the whole family at ' : 'Up to date with the family copy at ') + now());
+        setStatus((saving ? 'Saved for the whole family at ' : 'Up to date with the family copy at ') + now());
       }
     } catch (e) {
-      setStatus(navigator.onLine
-        ? 'Could not reach the family copy. Saved on this device, retrying.'
-        : 'No internet. Saved on this device, will sync when back online.');
-      retryTimer = setTimeout(sync, retryDelay);
-      retryDelay = Math.min(retryDelay * 2, 120000);
+      if (!navigator.onLine) {
+        setStatus('No internet. Your changes are kept on this device and will save when you are back online.');
+      } else if (pending()) {
+        setStatus('The shared storage is busy. Your changes are kept on this device and will save in a moment. Keep this page open.');
+      } else if (!lastSync) {
+        setStatus('The shared storage is busy. Trying again in a moment.');
+      }
+      retryTimer = setTimeout(sync, retryDelay + Math.random() * 4000);
+      retryDelay = Math.min(retryDelay * 1.6, 120000);
     } finally {
       syncing = false;
     }
@@ -680,7 +696,8 @@ ol.steps strong { font-weight: 600; }
     if (SHARED) {
       setStatus('Saving for the family...');
       clearTimeout(flushTimer);
-      flushTimer = setTimeout(sync, 1500);
+      clearTimeout(retryTimer);
+      flushTimer = setTimeout(sync, 2500);
     }
   }
 
@@ -752,10 +769,21 @@ ol.steps strong { font-weight: 600; }
 
   if (SHARED) {
     var syncBtn = document.getElementById('sync');
-    if (syncBtn) syncBtn.addEventListener('click', function () { setStatus('Checking the family copy...'); sync(); });
+    if (syncBtn) syncBtn.addEventListener('click', function () {
+      setStatus(pending() ? 'Saving for the family...' : 'Checking the family copy...');
+      sync();
+    });
     sync();
-    setInterval(function () { if (!document.hidden && !syncing) sync(); }, 45000);
-    document.addEventListener('visibilitychange', function () { if (!document.hidden) sync(); });
+    // Light polling so open pages pick up each other's changes without crowding the storage.
+    (function poll() {
+      setTimeout(function () {
+        if (!document.hidden && !syncing && !pending()) sync();
+        poll();
+      }, 120000 + Math.random() * 30000);
+    })();
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden && (pending() || Date.now() - lastSync > 30000)) sync();
+    });
     window.addEventListener('online', sync);
   }
 })();
