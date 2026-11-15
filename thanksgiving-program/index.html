@@ -543,13 +543,14 @@ async function keepPhotosAlive(){
     const id=v.slice(7);if(pendingImg.includes(id)) continue;
     const last=await dbGetKey("touch:"+id)||0;
     if(Date.now()-last<5*864e5) continue;
+    if(!IMG[id]&&!(await dbGetKey("img:"+id))) continue;   // only refresh photos this device actually has
     try{const b=await getBasket("tp-img-"+id);if(b){dbPut("touch:"+id,Date.now());if(b.d&&!IMG[id]){IMG[id]=b.d;dbPut("img:"+id,b.d)}}}catch(e){return}
   }
 }
 setTimeout(()=>{keepPhotosAlive()},20000);
 
 /* Photos: stored as "pantry:<id>" in the program; the picture itself is in its own basket. */
-const IMG={}, loadingImg={};
+const IMG={}, loadingImg={}, missWait={};
 let rerenderTimer=null;
 function src(v){
   if(!v) return "";
@@ -561,7 +562,10 @@ async function loadImg(id){
   return loadingImg[id]=(async()=>{
     let d=await dbGetKey("img:"+id);
     if(!d){try{const b=await getBasket("tp-img-"+id);d=b&&b.d}catch(e){}}
-    if(!d){setTimeout(()=>delete loadingImg[id],30000);return}
+    // Not uploaded yet (it is still waiting on the device that added it). Retry slowly, doubling
+    // the wait each time up to 15 minutes, so missing photos never flood the storage with requests.
+    if(!d){const w=(missWait[id]=Math.min((missWait[id]||30000)*2,900000));setTimeout(()=>delete loadingImg[id],w);return}
+    delete missWait[id];
     if(d){IMG[id]=d;dbPut("img:"+id,d);clearTimeout(rerenderTimer);rerenderTimer=setTimeout(applyRemoteRender,150)}
   })();
 }
