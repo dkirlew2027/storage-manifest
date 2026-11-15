@@ -223,7 +223,9 @@ body:is(.theme-garden,.theme-plum) .cover .pre{letter-spacing:5px;font-weight:60
       <div class="row">
         <button class="btn primary" onclick="window.print()">Print / Save PDF</button>
         <button class="btn" onclick="syncNow()">Sync now</button>
-        <button class="btn primary" onclick="$('#multiIn').click()">Add photos</button>
+        <button class="btn primary" id="folderBtn" onclick="folderButton()">Use OneDrive photo folder</button>
+        <input type="file" id="dirIn" webkitdirectory multiple hidden>
+        <button class="btn" onclick="$('#multiIn').click()">Add photos</button>
         <input type="file" id="multiIn" accept="image/*" multiple hidden>
         <button class="btn" onclick="exportData()">Download backup</button>
         <button class="btn" onclick="document.getElementById('importFile').click()">Restore backup</button>
@@ -479,7 +481,7 @@ const dirtyKeys=()=>KEYS.filter(k=>J(data[k])!==synced[k]);
 
 // Every change goes through save(): keep a copy on this device, then push to the shared copy.
 function save(){
-  dbPut("data",data);
+  dbPut("data",data);writeTextBackup();
   clearTimeout(flushTimer);flushTimer=setTimeout(flush,2000);
   if(dirtyKeys().length) setStatus(online?"Saving for the family...":"Offline: kept on this device, will sync when back online.");
 }
@@ -621,6 +623,89 @@ async function uploadInlineImages(){
   }
 }
 
+/* ======================= Photos from a OneDrive / SharePoint folder =======================
+   The family keeps photos in the synced OneDrive folder ("Evelyn Kirlew Program/Photos").
+   The page reads them straight from disk, so photos never go through the shared storage:
+   - "0 ..." folder: Featured. Files whose names contain "cover", "life sketch" or "back" fill those spots.
+   - Folders starting 1-4: the collage, in folder order, files in name order (her alone first, groups last).
+   - Any other folder (e.g. "5 In bed - family to decide") is left out.
+   Chrome/Edge remember the folder; Safari asks you to pick it each visit. The program text is
+   also saved into the folder as program-text.json, so SharePoint holds a copy of everything. */
+const FOLDER={active:false,handle:null,canWrite:false,cover:"",sketch:"",back:"",gallery:[],names:{},folders:[],skipped:[],urls:[]};
+const galleryList=()=>FOLDER.active?FOLDER.gallery:(data.gallery||[]);
+const isImg=n=>/\.(jpe?g|png|webp|gif)$/i.test(n);
+const natural=(a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:"base"});
+async function walk(dir,parts,out){
+  for await(const [name,h] of dir.entries()){
+    if(name.startsWith(".")) continue;
+    if(h.kind==="directory"){ if(parts.length<3) await walk(h,[...parts,name],out) }
+    else out.push({parts,name,get:()=>h.getFile()});
+  }
+}
+async function useItems(items){
+  FOLDER.urls.forEach(u=>URL.revokeObjectURL(u)); FOLDER.urls=[];
+  const byFolder={}; let heic=0;
+  for(const it of items){ if(/\.hei[cf]$/i.test(it.name)){heic++;continue} if(!isImg(it.name)) continue;
+    const f=it.parts[it.parts.length-1]||""; (byFolder[f]=byFolder[f]||[]).push(it); }
+  const url=async it=>{const u=URL.createObjectURL(await it.get());FOLDER.urls.push(u);return u};
+  FOLDER.cover=FOLDER.sketch=FOLDER.back="";FOLDER.gallery=[];FOLDER.names={};FOLDER.folders=[];FOLDER.skipped=[];
+  for(const f of Object.keys(byFolder).sort(natural)){
+    const list=byFolder[f].sort((a,b)=>natural(a.name,b.name));
+    if(/^\s*0/.test(f)){
+      for(const [key,re,slot] of [["coverPhoto",/cover/i,"cover"],["sketchPhoto",/life\s*sketch|sketch/i,"sketch"],["backPhoto",/back/i,"back"]]){
+        const it=list.find(x=>re.test(x.name)); if(it){FOLDER[slot]=await url(it);FOLDER.names[key]=f+" / "+it.name}
+      }
+    } else if(/^\s*[1-4]/.test(f)){
+      for(const it of list) FOLDER.gallery.push({img:await url(it),cap:""});
+      FOLDER.folders.push([f,list.length]);
+    } else FOLDER.skipped.push([f,list.length]);
+  }
+  FOLDER.heic=heic;
+  FOLDER.active=FOLDER.gallery.length>0||!!FOLDER.cover;
+  if(!FOLDER.active){alert("No photos found. Pick the \"Evelyn Kirlew Program\" folder (or its Photos folder) in OneDrive.");return}
+  setStatus(`Using ${FOLDER.gallery.length} photos from your OneDrive folder.`+(heic?` ${heic} iPhone HEIC photo(s) skipped: save them as JPG.`:""));
+  updateFolderBtn();renderForm();renderPreview();
+}
+async function loadFromHandle(h){const items=[];await walk(h,[h.name],items);FOLDER.handle=h;await useItems(items)}
+function updateFolderBtn(){const b=$("#folderBtn");if(!b)return;b.textContent=FOLDER.active?"Refresh photos":(FOLDER.handle?"Reconnect OneDrive folder":"Use OneDrive photo folder")}
+async function folderButton(){
+  try{
+    if(FOLDER.handle&&window.showDirectoryPicker){
+      const ok=(await FOLDER.handle.queryPermission({mode:"readwrite"}))==="granted"||(await FOLDER.handle.requestPermission({mode:"readwrite"}))==="granted";
+      if(ok){FOLDER.canWrite=true;return loadFromHandle(FOLDER.handle)}
+    }
+    if(window.showDirectoryPicker){
+      const h=await showDirectoryPicker({id:"evelyn-program",mode:"readwrite"});
+      FOLDER.canWrite=true;dbPut("folderHandle",h);await loadFromHandle(h);writeTextBackup();
+    } else $("#dirIn").click();   // Safari / Firefox: read-only folder pick each visit
+  }catch(e){ if(e&&e.name!=="AbortError") alert("Could not open that folder: "+e.message) }
+}
+$("#dirIn").addEventListener("change",e=>{
+  const items=[...e.target.files].map(f=>{const parts=f.webkitRelativePath.split("/");parts.pop();return {parts,name:f.name,get:async()=>f}});
+  e.target.value="";useItems(items);
+});
+function stopFolder(){FOLDER.active=false;FOLDER.handle=null;FOLDER.canWrite=false;dbPut("folderHandle",null);FOLDER.urls.forEach(u=>URL.revokeObjectURL(u));FOLDER.urls=[];updateFolderBtn();renderForm();renderPreview();setStatus("Stopped using the OneDrive folder.")}
+function folderNote(){
+  return `<div class="help" style="border:1px solid #f3e3a5;border-radius:8px;margin:0 0 8px">
+    <b>Photos come from your OneDrive folder</b> (${FOLDER.gallery.length} in the collage).<br>
+    ${FOLDER.folders.map(([f,n])=>`${esc(f)}: ${n}`).join("<br>")}
+    ${FOLDER.skipped.length?`<br><i>Not included: ${FOLDER.skipped.map(([f,n])=>`${esc(f)} (${n})`).join(", ")}</i>`:""}
+    <br><br>To add, remove or reorder photos, change the files in those folders (names set the order), then click <b>Refresh photos</b>.
+    <br><br><button class="btn small" onclick="event.preventDefault();folderButton()">Refresh photos</button>
+    <button class="btn small" onclick="event.preventDefault();stopFolder()">Stop using folder</button></div>`;
+}
+// Keep a copy of the program text (no photos) in the folder, so SharePoint has everything.
+let backupTimer=null;
+function writeTextBackup(){
+  if(!FOLDER.handle||!FOLDER.canWrite) return;
+  clearTimeout(backupTimer);backupTimer=setTimeout(async()=>{
+    try{const copy=structuredClone(data);delete copy.photoAdj;
+      copy.gallery=[];["coverPhoto","sketchPhoto","backPhoto"].forEach(k=>copy[k]="");(copy.tributes||[]).forEach(t=>t.img="");
+      const fh=await FOLDER.handle.getFileHandle("program-text.json",{create:true});const w=await fh.createWritable();
+      await w.write(JSON.stringify(copy,null,1));await w.close();}catch(e){}
+  },3000);
+}
+
 /* ======================= Gallery / collage layout =======================
    Each gallery page is a 6-column x 8-row grid. Collage pages hold up to 7 photos in
    mixed sizes; grid pages hold up to 6 even boxes. Extra photos flow onto more pages. */
@@ -631,7 +716,7 @@ const COLLAGE={1:[[6,8]],2:[[6,4],[6,4]],3:[[6,4],[3,4],[3,4]],4:[[3,4],[3,4],[3
 const GRID={1:[[6,8]],2:[[6,4],[6,4]],3:[[6,3],[3,5],[3,5]],4:[[3,4],[3,4],[3,4],[3,4]],
   5:[[6,4],[3,4],[3,4],[3,4],[3,4]],6:[[3,3],[3,3],[3,3],[3,3],[3,2],[3,2]]};
 const perPage=()=>data.galleryLayout==="grid"?6:7;
-function galleryTile(i){const n=Math.max(1,(data.gallery||[]).length),per=perPage(),start=Math.floor(i/per)*per,
+function galleryTile(i){const n=Math.max(1,galleryList().length),per=perPage(),start=Math.floor(i/per)*per,
   cnt=Math.min(per,n-start),pat=(data.galleryLayout==="grid"?GRID:COLLAGE)[cnt]||COLLAGE[7];const [c,r]=pat[i-start]||[2,2];return {c,r}}
 
 /* ======================= Photo adjust (position, zoom, rotate) ======================= */
@@ -686,6 +771,8 @@ function readImage(file){return new Promise((res,rej)=>{const fr=new FileReader(
 
 /* ======================= Form rendering ======================= */
 function fieldHTML([key,label,hint,multi,kind],val,path){
+  if(kind==="img"&&FOLDER.active&&FOLDER[{coverPhoto:"cover",sketchPhoto:"sketch",backPhoto:"back"}[key]])
+    return `<div class="field"><label>${esc(label)}</label><div class="hint" style="font-size:12px;color:#5b6470">From your OneDrive folder: <b>${esc(FOLDER.names[key]||"")}</b></div></div>`;
   const id=path;
   if(kind&&kind.startsWith("select:")){
     const opts=kind.slice(7).split("|").map(o=>o.split("="));
@@ -730,7 +817,7 @@ function renderForm(){
   $("#form").innerHTML=SECTIONS.map((s,i)=>{
     const open = (i in openState)? openState[i] : !!s.open;
     let body=(s.fields||[]).map(f=>fieldHTML(f,data[f[0]],f[0])).join("");
-    if(s.list) body+=listHTML(s.list);
+    if(s.list) body+=(s.list==="gallery"&&FOLDER.active)?folderNote():listHTML(s.list);
     if(s.after) body+=`<div style="margin-top:12px"></div>`+s.after.map(f=>fieldHTML(f,data[f[0]],f[0])).join("");
     return `<details class="sec" ${open?"open":""}><summary><span>${esc(s.title)}</span><span class="pg">${s.page}</span></summary><div class="sec-body">${body}</div></details>`;
   }).join("");
@@ -837,7 +924,7 @@ function coverName(full){
 function renderPreview(){
   const w=data.bgWash||"soft";document.body.classList.toggle("wash-soft",w==="soft");document.body.classList.toggle("wash-plain",w==="plain");
   const ws=document.getElementById("washSel");if(ws&&ws.value!==w)ws.value=w;
-  const d=data, nm=ph(d.fullName,"Her full name");
+  const d=FOLDER.active?Object.assign({},data,{coverPhoto:FOLDER.cover||data.coverPhoto,sketchPhoto:FOLDER.sketch||data.sketchPhoto,backPhoto:FOLDER.back||data.backPhoto,gallery:FOLDER.gallery}):data, nm=ph(d.fullName,"Her full name");
   const P=[];pageNo=0;
   // 1 Cover
   P.push(page("Page 1 · Front cover",`<div class="cover">
@@ -975,6 +1062,8 @@ function resetAll(){if(!confirm("This clears the program for the WHOLE family an
   // What this device last saw on the shared copy. Devices from before sharing existed
   // use the blank template, so anything they typed counts as a change to send.
   pendingImg=await dbGetKey("pendingImg")||[];
+  try{const h=await dbGetKey("folderHandle");
+    if(h){FOLDER.handle=h;if((await h.queryPermission({mode:"readwrite"}))==="granted"){FOLDER.canWrite=true;await loadFromHandle(h)}else updateFolderBtn()}}catch(e){}
   synced=await dbGetKey("synced")||Object.fromEntries(KEYS.map(k=>[k,J(DEFAULTS[k])]));
   renderForm();renderPreview();setThemeClass(data.theme||"ivory");
   setStatus("Connecting to the family copy...");
